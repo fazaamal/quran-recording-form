@@ -18,7 +18,7 @@ export const stimuli: Stimulus[] = [
   { id: "dad_letter_fatha", kind: "letter", letter: "dad", harakah: "fatha", arabic: "ضَ", hint: "Ḍād with fatḥah" },
   { id: "dad_letter_kasra", kind: "letter", letter: "dad", harakah: "kasra", arabic: "ضِ", hint: "Ḍād with kasrah" },
   { id: "dad_letter_damma", kind: "letter", letter: "dad", harakah: "damma", arabic: "ضُ", hint: "Ḍād with ḍammah" },
-  { id: "dad_letter_sukoon", kind: "letter", letter: "dad", harakah: "sukoon", arabic: "ضْ", hint: "Ḍād with sukūn" },
+  { id: "dad_letter_sukoon", kind: "letter", letter: "dad", harakah: "sukoon", arabic: "اَضْ", hint: "Short a (alif fatḥah), then Ḍād with sukūn" },
 
   // ض words
   { id: "dad_word_fatha", kind: "word", letter: "dad", harakah: "fatha", arabic: "ضَارَ", hint: "Read the word" },
@@ -30,7 +30,7 @@ export const stimuli: Stimulus[] = [
   { id: "ayn_letter_fatha", kind: "letter", letter: "ayn", harakah: "fatha", arabic: "عَ", hint: "ʿAyn with fatḥah" },
   { id: "ayn_letter_kasra", kind: "letter", letter: "ayn", harakah: "kasra", arabic: "عِ", hint: "ʿAyn with kasrah" },
   { id: "ayn_letter_damma", kind: "letter", letter: "ayn", harakah: "damma", arabic: "عُ", hint: "ʿAyn with ḍammah" },
-  { id: "ayn_letter_sukoon", kind: "letter", letter: "ayn", harakah: "sukoon", arabic: "عْ", hint: "ʿAyn with sukūn" },
+  { id: "ayn_letter_sukoon", kind: "letter", letter: "ayn", harakah: "sukoon", arabic: "اَعْ", hint: "Short a (alif fatḥah), then ʿAyn with sukūn" },
 
   // ع words
   { id: "ayn_word_fatha", kind: "word", letter: "ayn", harakah: "fatha", arabic: "عَلِمَ", hint: "Read the word" },
