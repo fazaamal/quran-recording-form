@@ -1,0 +1,61 @@
+# Local dependencies for development (Postgres + S3-compatible MinIO).
+# Run: docker compose up -d
+#
+# Example .env for netlify dev (see .env.example "Docker Compose" section):
+#   POSTGRES_URL=postgres://qrf:qrf_dev_secret@localhost:5432/quran_recording
+#   S3_ENDPOINT=http://127.0.0.1:9000
+#   S3_FORCE_PATH_STYLE=true
+#   AWS_REGION=us-east-1
+#   AWS_ACCESS_KEY_ID=minioadmin
+#   AWS_SECRET_ACCESS_KEY=minioadminsecret
+#   S3_BUCKET=quran-recording-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: qrf-postgres
+    environment:
+      POSTGRES_USER: qrf
+      POSTGRES_PASSWORD: qrf_dev_secret
+      POSTGRES_DB: quran_recording
+    ports:
+      - "55432:5432"
+ 
+    volumes:
+      - qrf_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qrf -d quran_recording"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: qrf-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminsecret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - qrf_minio_data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: qrf-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 minioadmin minioadminsecret; do
+        sleep 1;
+      done;
+      mc mb local/quran-recording-local --ignore-existing;
+      exit 0;
+      "
+
+volumes:
+  qrf_postgres_data:
+  qrf_minio_data:
