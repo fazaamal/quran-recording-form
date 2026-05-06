@@ -23,7 +23,7 @@ export default async (req: Request, _context: Context) => {
     const pool = db()
 
     const resp = await pool.query(
-      `select id, created_at, tajweed_level, years_reading, age, ethnicity, had_tajweed_classes, signed_consent_s3_key
+      `select id, created_at, name, tajweed_level, years_reading, age, ethnicity, had_tajweed_classes, signed_consent_s3_key
        from responses where id=$1`,
       [id]
     )
@@ -76,6 +76,7 @@ export default async (req: Request, _context: Context) => {
         response: {
           id: r.id as string,
           createdAt: (r.created_at as Date).toISOString(),
+          name: r.name as string,
           tajweedLevel: r.tajweed_level as string,
           yearsReading: r.years_reading as number,
           age: r.age as number,

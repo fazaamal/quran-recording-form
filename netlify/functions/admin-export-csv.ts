@@ -25,7 +25,7 @@ export default async (req: Request, _context: Context) => {
     await ensureSchema()
     const pool = db()
     const { rows } = await pool.query(
-      `select r.id as response_id, r.created_at, r.tajweed_level, r.years_reading, r.age, r.ethnicity,
+      `select r.id as response_id, r.created_at, r.name, r.tajweed_level, r.years_reading, r.age, r.ethnicity,
               r.had_tajweed_classes, r.signed_consent_s3_key,
               rec.stimulus_id, rec.stimulus_text_ar, rec.kind, rec.letter, rec.harakah,
               rec.s3_key, rec.content_type, rec.duration_ms
@@ -38,6 +38,7 @@ export default async (req: Request, _context: Context) => {
     const header = [
       "response_id",
       "created_at",
+      "name",
       "tajweed_level",
       "years_reading",
       "age",
@@ -65,6 +66,7 @@ export default async (req: Request, _context: Context) => {
       const row = [
         x.response_id,
         (x.created_at as Date).toISOString(),
+        x.name,
         x.tajweed_level,
         x.years_reading,
         x.age,

@@ -7,6 +7,7 @@ import { apiCreateUploadUrls, apiSubmitResponse } from "../utils/api";
 type TajweedLevel = "beginner" | "intermediate" | "advanced" | "teacher" | "other";
 
 type ParticipantInfo = {
+  name: string;
   tajweedLevel: TajweedLevel;
   yearsReading: number | "";
   age: number | "";
@@ -26,6 +27,7 @@ type RecordingBlob = {
 export function ParticipantFlow() {
   const [step, setStep] = useState<Step>("welcome");
   const [info, setInfo] = useState<ParticipantInfo>({
+    name: "",
     tajweedLevel: "beginner",
     yearsReading: "",
     age: "",
@@ -106,6 +108,7 @@ export function ParticipantFlow() {
 
       const submitRes = await apiSubmitResponse({
         participant: {
+          name: info.name.trim(),
           tajweedLevel: info.tajweedLevel,
           yearsReading: Number(info.yearsReading || 0),
           age: Number(info.age || 0),
@@ -141,6 +144,7 @@ export function ParticipantFlow() {
 
   const infoComplete =
     info.hadTajweedClasses !== null &&
+    info.name.trim() !== "" &&
     info.ethnicity.trim() !== "" &&
     info.age !== "" &&
     info.yearsReading !== "";
@@ -193,6 +197,17 @@ export function ParticipantFlow() {
       {step === "info" && (
         <div className="card stack">
           <div style={{ fontSize: 18, fontWeight: 750 }}>Participant information</div>
+          <div className="row">
+            <label style={{ flex: 1 }}>
+              Name
+              <input
+                value={info.name}
+                onChange={(e) => setInfo((p) => ({ ...p, name: e.target.value }))}
+                placeholder="Type your name"
+                autoComplete="name"
+              />
+            </label>
+          </div>
           <div className="row">
             <label>
               Tajwīd proficiency level

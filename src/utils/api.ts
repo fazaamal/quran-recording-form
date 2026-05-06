@@ -13,6 +13,7 @@ type CreateUploadUrlsRes = {
 
 type SubmitResponseReq = {
   participant: {
+    name: string
     tajweedLevel: string
     yearsReading: number
     age: number

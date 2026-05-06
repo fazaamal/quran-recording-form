@@ -61,6 +61,7 @@ export async function ensureSchema() {
     create table if not exists responses (
       id text primary key,
       created_at timestamptz not null default now(),
+      name text not null default '',
       tajweed_level text not null,
       years_reading int not null,
       age int not null,
@@ -68,6 +69,18 @@ export async function ensureSchema() {
       signature_s3_key text not null,
       signed_consent_s3_key text
     );
+  `)
+  await pool.query(`
+    alter table responses add column if not exists name text;
+  `)
+  await pool.query(`
+    update responses set name='' where name is null;
+  `)
+  await pool.query(`
+    alter table responses alter column name set default '';
+  `)
+  await pool.query(`
+    alter table responses alter column name set not null;
   `)
   await pool.query(`
     alter table responses add column if not exists had_tajweed_classes boolean not null default false;

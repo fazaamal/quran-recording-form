@@ -1,4 +1,4 @@
-import { PDFDocument } from "pdf-lib"
+import { PDFDocument, StandardFonts } from "pdf-lib"
 import path from "node:path"
 import fs from "node:fs"
 import {
@@ -14,6 +14,7 @@ import type { Context } from "@netlify/functions"
 
 type Req = {
   participant: {
+    name: string
     tajweedLevel: string
     yearsReading: number
     age: number
@@ -42,7 +43,8 @@ function numEnv(name: string, fallback: number) {
 
 async function generateSignedConsentPdf(
   signaturePngBytes: Buffer,
-  responseId: string
+  responseId: string,
+  participantName: string
 ) {
   const templatePath = path.join(process.cwd(), "pdf", "consent_form.pdf")
   const templateBytes = fs.readFileSync(templatePath)
@@ -56,12 +58,32 @@ async function generateSignedConsentPdf(
   const page = pages[pageIndex]!
 
   const png = await pdf.embedPng(signaturePngBytes)
+  const font = await pdf.embedFont(StandardFonts.Helvetica)
 
   const x = numEnv("CONSENT_SIG_X", 80)
   const y = numEnv("CONSENT_SIG_Y", 120)
   const w = numEnv("CONSENT_SIG_W", 220)
   const h = numEnv("CONSENT_SIG_H", 80)
 
+  const now = new Date()
+  const dd = String(now.getDate()).padStart(2, "0")
+  const mm = String(now.getMonth() + 1).padStart(2, "0")
+  const yyyy = String(now.getFullYear())
+  const dateStr = `${dd}/${mm}/${yyyy}`
+
+  page.drawText(participantName, {
+    x: 85,
+    y: 115,
+    size: 16,
+    maxWidth: 145,
+    font,
+  })
+  page.drawText(dateStr, {
+    x: 400,
+    y: 240,
+    size: 16,
+    font,
+  })
   page.drawImage(png, { x, y, width: w, height: h })
 
   const out = await pdf.save()
@@ -83,6 +105,9 @@ export default async (req: Request, _context: Context) => {
     if (body.recordings.length !== 16) {
       return new Response("Expected 16 recordings", { status: 400 })
     }
+    if (typeof body.participant.name !== "string" || !body.participant.name.trim()) {
+      return new Response("Invalid participant.name", { status: 400 })
+    }
     if (typeof body.participant.hadTajweedClasses !== "boolean") {
       return new Response("Invalid participant.hadTajweedClasses", {
         status: 400,
@@ -98,10 +123,11 @@ export default async (req: Request, _context: Context) => {
 
     const pool = (await import("./_shared")).db()
     await pool.query(
-      `insert into responses (id, tajweed_level, years_reading, age, ethnicity, had_tajweed_classes, signature_s3_key)
-       values ($1,$2,$3,$4,$5,$6,$7)`,
+      `insert into responses (id, name, tajweed_level, years_reading, age, ethnicity, had_tajweed_classes, signature_s3_key)
+       values ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
         responseId,
+        body.participant.name.trim(),
         body.participant.tajweedLevel,
         body.participant.yearsReading,
         body.participant.age,
@@ -136,7 +162,8 @@ export default async (req: Request, _context: Context) => {
     const signatureBytes = await readS3ToBuffer(body.signature.s3Key)
     const signedPdfBytes = await generateSignedConsentPdf(
       signatureBytes,
-      responseId
+      responseId,
+      body.participant.name.trim()
     )
 
     const prefix = process.env["S3_PREFIX"] ?? "qrf"

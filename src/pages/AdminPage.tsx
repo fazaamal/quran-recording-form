@@ -5,6 +5,7 @@ import { BasicAuth, basicAuthAuthorizationHeader, loadBasicAuth, saveBasicAuth }
 type ResponseRow = {
   id: string;
   createdAt: string;
+  name: string;
   tajweedLevel: string;
   yearsReading: number;
   age: number;
@@ -170,6 +171,8 @@ export function AdminPage() {
             <div>
               <div style={{ fontSize: 18, fontWeight: 750 }}>Response details</div>
               <div className="muted">
+                Name: {selected.name || "—"}
+                {" • "}
                 {new Date(selected.createdAt).toLocaleString()} • {selected.id}
                 {" • "}
                 Formal tajweed classes: {selected.hadTajweedClasses ? "Yes" : "No"}
@@ -229,6 +232,7 @@ export function AdminPage() {
             <tr style={{ textAlign: "left", color: "var(--muted)" }}>
               <th style={{ padding: "10px 8px" }}>Created</th>
               <th style={{ padding: "10px 8px" }}>ID</th>
+              <th style={{ padding: "10px 8px" }}>Name</th>
               <th style={{ padding: "10px 8px" }}>Level</th>
               <th style={{ padding: "10px 8px" }}>Years</th>
               <th style={{ padding: "10px 8px" }}>Age</th>
@@ -249,6 +253,7 @@ export function AdminPage() {
                 <td style={{ padding: "10px 8px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
                   {r.id}
                 </td>
+                <td style={{ padding: "10px 8px" }}>{r.name || <span className="muted">—</span>}</td>
                 <td style={{ padding: "10px 8px" }}>{r.tajweedLevel}</td>
                 <td style={{ padding: "10px 8px" }}>{r.yearsReading}</td>
                 <td style={{ padding: "10px 8px" }}>{r.age}</td>
@@ -267,7 +272,7 @@ export function AdminPage() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td className="muted" style={{ padding: "12px 8px" }} colSpan={8}>
+                <td className="muted" style={{ padding: "12px 8px" }} colSpan={9}>
                   No responses yet.
                 </td>
               </tr>
