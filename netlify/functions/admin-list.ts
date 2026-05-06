@@ -3,18 +3,18 @@ import { db } from "./_shared"
 import type { Context } from "@netlify/functions"
 
 export default async (req: Request, _context: Context) => {
+  console.log("admin-list", req)
   try {
     if (req.method !== "GET")
-      return { statusCode: 405, body: "Method not allowed" }
+      return new Response("Method not allowed", { status: 405 })
     if (!checkBasicAuth(req.headers.get("authorization") ?? undefined)) {
-      return {
-        statusCode: 401,
+      return new Response("Unauthorized", {
+        status: 401,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
           "WWW-Authenticate": 'Basic realm="Admin"',
-        } as Record<string, string>,
-        body: "Unauthorized",
-      }
+        },
+      })
     }
 
     await ensureSchema()
@@ -51,15 +51,13 @@ export default async (req: Request, _context: Context) => {
       })
     )
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" } as Record<string, string>,
-      body: JSON.stringify({ responses }),
-    }
+    return new Response(JSON.stringify({ responses }), {
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    })
   } catch (e) {
-    return {
-      statusCode: 500,
-      body: e instanceof Error ? e.message : "Server error",
-    }
+    return new Response(e instanceof Error ? e.message : "Server error", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    })
   }
 }

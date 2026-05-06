@@ -19,8 +19,15 @@ export function s3() {
   const endpoint = process.env["S3_ENDPOINT"]
   const forcePathStyle =
     process.env["S3_FORCE_PATH_STYLE"] === "true" || Boolean(endpoint?.trim())
+  const accessKeyId = process.env["S3_AWS_ACCESS_KEY_ID"]?.trim()
+  const secretAccessKey = process.env["S3_AWS_SECRET_ACCESS_KEY"]?.trim()
+  const credentials =
+    accessKeyId && secretAccessKey
+      ? { accessKeyId, secretAccessKey }
+      : undefined
   return new S3Client({
     region,
+    ...(credentials ? { credentials } : {}),
     ...(endpoint?.trim() ? { endpoint: endpoint.trim() } : {}),
     ...(forcePathStyle ? { forcePathStyle: true } : {}),
   })

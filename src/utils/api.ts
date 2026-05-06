@@ -40,22 +40,22 @@ function apiUrl(path: string): string {
   return `${protocol}//${host}${path}`
 }
 
-async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
-  const url = apiUrl(path)
-  try {
-    console.log("apiFetch", url, init)
+// async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+//   const url = apiUrl(path)
+//   try {
+//     console.log("apiFetch", url, init)
 
-    return await fetch(url, init)
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    if (/expected pattern|invalid url|failed to parse url/i.test(msg)) {
-      throw new Error(
-        `${msg} — Open this app over http(s), e.g. the URL from "npm run dev" (port 8888). file:// or some embedded previews cannot call /api.`
-      )
-    }
-    throw e instanceof Error ? e : new Error(msg)
-  }
-}
+//     return await fetch(`http://localhost:8888/.netlify/functions` + url, init)
+//   } catch (e) {
+//     const msg = e instanceof Error ? e.message : String(e)
+//     if (/expected pattern|invalid url|failed to parse url/i.test(msg)) {
+//       throw new Error(
+//         `${msg} — Open this app over http(s), e.g. the URL from "npm run dev" (port 8888). file:// or some embedded previews cannot call /api.`
+//       )
+//     }
+//     throw e instanceof Error ? e : new Error(msg)
+//   }
+// }
 
 async function json<T>(res: Response): Promise<T> {
   const ct = res.headers.get("content-type") ?? ""
@@ -85,7 +85,7 @@ async function json<T>(res: Response): Promise<T> {
 export async function apiCreateUploadUrls(
   body: CreateUploadUrlsReq
 ): Promise<CreateUploadUrlsRes> {
-  const res = await apiFetch("/api/create-upload-urls", {
+  const res = await fetch("/create-upload-urls", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -96,7 +96,7 @@ export async function apiCreateUploadUrls(
 export async function apiSubmitResponse(
   body: SubmitResponseReq
 ): Promise<SubmitResponseRes> {
-  const res = await apiFetch("/api/submit-response", {
+  const res = await fetch("/submit-response", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -105,7 +105,7 @@ export async function apiSubmitResponse(
 }
 
 export async function apiAdminList(headers: Record<string, string>) {
-  const res = await apiFetch("/api/admin-list", { headers })
+  const res = await fetch("/admin-list", { headers })
   return json<{ responses: any[] }>(res)
 }
 
@@ -113,15 +113,14 @@ export async function apiAdminResponse(
   headers: Record<string, string>,
   id: string
 ) {
-  const res = await apiFetch(
-    `/api/admin-response?id=${encodeURIComponent(id)}`,
-    { headers }
-  )
+  const res = await fetch(`/api/admin-response?id=${encodeURIComponent(id)}`, {
+    headers,
+  })
   return json<{ response: any; recordings: any[] }>(res)
 }
 
 export async function apiAdminExportCsv(headers: Record<string, string>) {
-  const res = await apiFetch("/api/admin-export-csv", { headers })
+  const res = await fetch("/admin-export-csv", { headers })
   if (!res.ok) throw new Error(`Export failed (${res.status})`)
   return await res.blob()
 }

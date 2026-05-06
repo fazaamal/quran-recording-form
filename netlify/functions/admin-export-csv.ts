@@ -11,16 +11,15 @@ function csvEscape(v: unknown) {
 export default async (req: Request, _context: Context) => {
   try {
     if (req.method !== "GET")
-      return { statusCode: 405, body: "Method not allowed" }
+      return new Response("Method not allowed", { status: 405 })
     if (!checkBasicAuth(req.headers.get("authorization") ?? undefined)) {
-      return {
-        statusCode: 401,
+      return new Response("Unauthorized", {
+        status: 401,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
           "WWW-Authenticate": 'Basic realm="Admin"',
-        } as Record<string, string>,
-        body: "Unauthorized",
-      }
+        },
+      })
     }
 
     await ensureSchema()
@@ -83,18 +82,16 @@ export default async (req: Request, _context: Context) => {
       lines.push(row.map(csvEscape).join(","))
     }
 
-    return {
-      statusCode: 200,
+    return new Response(lines.join("\n"), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="responses.csv"`,
-      } as Record<string, string>,
-      body: lines.join("\n"),
-    }
+      },
+    })
   } catch (e) {
-    return {
-      statusCode: 500,
-      body: e instanceof Error ? e.message : "Server error",
-    }
+    return new Response(e instanceof Error ? e.message : "Server error", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    })
   }
 }

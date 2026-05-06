@@ -3,22 +3,22 @@ import { db } from "./_shared"
 import type { Context } from "@netlify/functions"
 
 export default async (req: Request, _context: Context) => {
+  console.log("admin-response", req)
   try {
     if (req.method !== "GET")
-      return { statusCode: 405, body: "Method not allowed" }
+      return new Response("Method not allowed", { status: 405 })
     if (!checkBasicAuth(req.headers.get("authorization") ?? undefined)) {
-      return {
-        statusCode: 401,
+      return new Response("Unauthorized", {
+        status: 401,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
           "WWW-Authenticate": 'Basic realm="Admin"',
-        } as Record<string, string>,
-        body: "Unauthorized",
-      }
+        },
+      })
     }
 
     const id = new URL(req.url).searchParams.get("id")
-    if (!id) return { statusCode: 400, body: "Missing id" }
+    if (!id) return new Response("Missing id", { status: 400 })
 
     await ensureSchema()
     const pool = db()
@@ -28,7 +28,8 @@ export default async (req: Request, _context: Context) => {
        from responses where id=$1`,
       [id]
     )
-    if (resp.rows.length === 0) return { statusCode: 404, body: "Not found" }
+    if (resp.rows.length === 0)
+      return new Response("Not found", { status: 404 })
     const r = resp.rows[0]!
 
     const recs = await pool.query(
@@ -71,10 +72,8 @@ export default async (req: Request, _context: Context) => {
       }
     }
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" } as Record<string, string>,
-      body: JSON.stringify({
+    return new Response(
+      JSON.stringify({
         response: {
           id: r.id as string,
           createdAt: (r.created_at as Date).toISOString(),
@@ -87,11 +86,12 @@ export default async (req: Request, _context: Context) => {
         },
         recordings,
       }),
-    }
+      { headers: { "Content-Type": "application/json; charset=utf-8" } }
+    )
   } catch (e) {
-    return {
-      statusCode: 500,
-      body: e instanceof Error ? e.message : "Server error",
-    }
+    return new Response(e instanceof Error ? e.message : "Server error", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    })
   }
 }

@@ -9,10 +9,10 @@ type Req = {
 export default async (req: Request, _context: Context) => {
   try {
     if (req.method !== "POST")
-      return { statusCode: 405, body: "Method not allowed" }
+      return new Response("Method not allowed", { status: 405 })
     const body = JSON.parse((await req.text()) || "{}") as Req
     if (!Array.isArray(body.recordings) || !body.signature?.contentType) {
-      return { statusCode: 400, body: "Invalid request" }
+      return new Response("Invalid request", { status: 400 })
     }
 
     // Optional env var to keep uploads under a prefix
@@ -44,18 +44,17 @@ export default async (req: Request, _context: Context) => {
     requireEnv("S3_AWS_REGION")
     requireEnv("S3_BUCKET")
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    return new Response(
+      JSON.stringify({
         signature: { putUrl: signaturePutUrl, s3Key: signatureKey },
         recordings,
       }),
-    }
+      { headers: { "Content-Type": "application/json; charset=utf-8" } }
+    )
   } catch (e) {
-    return {
-      statusCode: 500,
-      body: e instanceof Error ? e.message : "Server error",
-    }
+    return new Response(e instanceof Error ? e.message : "Server error", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    })
   }
 }

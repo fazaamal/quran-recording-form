@@ -71,20 +71,22 @@ async function generateSignedConsentPdf(
 export default async (req: Request, _context: Context) => {
   try {
     if (req.method !== "POST")
-      return { statusCode: 405, body: "Method not allowed" }
+      return new Response("Method not allowed", { status: 405 })
     const body = JSON.parse((await req.text()) || "{}") as Req
     if (
       !body.participant ||
       !body.signature?.s3Key ||
       !Array.isArray(body.recordings)
     ) {
-      return { statusCode: 400, body: "Invalid request" }
+      return new Response("Invalid request", { status: 400 })
     }
     if (body.recordings.length !== 16) {
-      return { statusCode: 400, body: "Expected 16 recordings" }
+      return new Response("Expected 16 recordings", { status: 400 })
     }
     if (typeof body.participant.hadTajweedClasses !== "boolean") {
-      return { statusCode: 400, body: "Invalid participant.hadTajweedClasses" }
+      return new Response("Invalid participant.hadTajweedClasses", {
+        status: 400,
+      })
     }
 
     requireEnv("POSTGRES_URL")
@@ -156,15 +158,13 @@ export default async (req: Request, _context: Context) => {
     )
 
     // Returning only response id; admin APIs can presign later
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ responseId }),
-    }
+    return new Response(JSON.stringify({ responseId }), {
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    })
   } catch (e) {
-    return {
-      statusCode: 500,
-      body: e instanceof Error ? e.message : "Server error",
-    }
+    return new Response(e instanceof Error ? e.message : "Server error", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    })
   }
 }
