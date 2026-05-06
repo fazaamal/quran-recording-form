@@ -1,28 +1,57 @@
-:root {
-  color-scheme: light;
-  --bg: #0b0c10;
-  --card: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.12);
-  --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.66);
-  --accent: #77d3ff;
-  --danger: #ff6b6b;
-  --ok: #69db7c;
-  --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  --radius: 18px;
-  --maxw: 980px;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* shadcn/ui design tokens – always dark */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5% 64.9%;
+    --radius: 0.5rem;
+
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f7fb;
-    --card: rgba(0, 0, 0, 0.04);
-    --border: rgba(0, 0, 0, 0.12);
-    --text: rgba(0, 0, 0, 0.90);
-    --muted: rgba(0, 0, 0, 0.60);
-    --accent: #0b74ff;
-    --shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
-  }
+/* ─── App-level design tokens (non-shadcn) ─────────────────────────────────── */
+:root {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-card: rgba(0, 0, 0, 0.03);
+  --app-border: rgba(0, 0, 0, 0.12);
+  --app-text: #1a232f;
+  --app-muted: rgba(24, 32, 44, 0.55);
+  --app-accent: #0576c8;
+  --danger: #e65757;
+  --ok: #40ae68;
+  --shadow: 0 8px 32px rgba(44, 62, 80, 0.08);
+  --app-radius: 18px;
+  --maxw: 980px;
 }
 
 html,
@@ -39,8 +68,8 @@ body {
       rgba(119, 211, 255, 0.22),
       transparent 60%
     ),
-    var(--bg);
-  color: var(--text);
+    var(--app-bg);
+  color: var(--app-text);
 }
 
 * {
@@ -79,13 +108,13 @@ a {
 
 .brandSubtitle {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--app-muted);
 }
 
 .card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--app-card);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
   box-shadow: var(--shadow);
   padding: 18px;
 }
@@ -107,61 +136,8 @@ a {
   }
 }
 
-label {
-  display: grid;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 12px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  outline: none;
-}
-
-@media (prefers-color-scheme: light) {
-  input,
-  select,
-  textarea {
-    background: rgba(255, 255, 255, 0.9);
-  }
-}
-
-button {
-  appearance: none;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  border-radius: 999px;
-  padding: 10px 14px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-button.primary {
-  background: linear-gradient(180deg, rgba(119, 211, 255, 0.28), rgba(119, 211, 255, 0.10));
-  border-color: rgba(119, 211, 255, 0.45);
-}
-
-button.danger {
-  border-color: rgba(255, 107, 107, 0.5);
-  background: rgba(255, 107, 107, 0.10);
-}
-
-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
 .muted {
-  color: var(--muted);
+  color: var(--app-muted);
 }
 
 .arabic {
@@ -178,8 +154,8 @@ button:disabled {
   gap: 8px;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  color: var(--muted);
+  border: 1px solid var(--app-border);
+  color: var(--app-muted);
   font-size: 12px;
 }
 
@@ -187,7 +163,7 @@ button:disabled {
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--app-border);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
 }
@@ -196,4 +172,3 @@ button:disabled {
   height: 100%;
   background: linear-gradient(90deg, rgba(119, 211, 255, 0.45), rgba(119, 211, 255, 0.15));
 }
-

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiAdminExportCsv, apiAdminList, apiAdminResponse } from "../utils/api";
 import { BasicAuth, basicAuthAuthorizationHeader, loadBasicAuth, saveBasicAuth } from "../utils/basicAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type ResponseRow = {
   id: string;
@@ -98,22 +101,26 @@ export function AdminPage() {
           Enter the Basic Auth credentials (from Netlify env vars) to access the dashboard.
         </div>
         <div className="row">
-          <label>
-            Username
-            <input value={auth.user} onChange={(e) => setAuth((p) => ({ ...p, user: e.target.value }))} />
-          </label>
-          <label>
-            Password
-            <input
+          <div className="grid gap-2">
+            <Label htmlFor="adminUser">Username</Label>
+            <Input
+              id="adminUser"
+              value={auth.user}
+              onChange={(e) => setAuth((p) => ({ ...p, user: e.target.value }))}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="adminPass">Password</Label>
+            <Input
+              id="adminPass"
               type="password"
               value={auth.pass}
               onChange={(e) => setAuth((p) => ({ ...p, pass: e.target.value }))}
             />
-          </label>
+          </div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button
-            className="primary"
+          <Button
             onClick={() => {
               saveBasicAuth(auth);
               setAuthed(true);
@@ -121,16 +128,16 @@ export function AdminPage() {
             disabled={!auth.user || !auth.pass}
           >
             Continue
-          </button>
-          <button
-            className="danger"
+          </Button>
+          <Button
+            variant="destructive"
             onClick={() => {
               saveBasicAuth({ user: "", pass: "" });
               setAuth({ user: "", pass: "" });
             }}
           >
             Clear
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -145,21 +152,21 @@ export function AdminPage() {
             <div className="muted">{rows.length} total</div>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={refresh} disabled={loading}>
+            <Button variant="outline" onClick={refresh} disabled={loading}>
               {loading ? "Loading..." : "Refresh"}
-            </button>
-            <button className="primary" onClick={exportCsv} disabled={loading}>
+            </Button>
+            <Button onClick={exportCsv} disabled={loading}>
               Export (CSV for Excel)
-            </button>
-            <button
-              className="danger"
+            </Button>
+            <Button
+              variant="destructive"
               onClick={() => {
                 saveBasicAuth(null);
                 setAuthed(false);
               }}
             >
               Log out
-            </button>
+            </Button>
           </div>
         </div>
         {error && <div style={{ color: "var(--danger)" }}>{error}</div>}
@@ -179,7 +186,7 @@ export function AdminPage() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button onClick={() => setSelected(null)}>Close</button>
+              <Button variant="outline" onClick={() => setSelected(null)}>Close</Button>
               {selected.signedConsentUrl && (
                 <a className="pill" href={selected.signedConsentUrl} target="_blank" rel="noreferrer">
                   Open consent PDF
@@ -191,7 +198,7 @@ export function AdminPage() {
           <div className="card" style={{ boxShadow: "none", background: "transparent", padding: 0 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+                <tr style={{ textAlign: "left", color: "var(--app-muted)" }}>
                   <th style={{ padding: "10px 8px" }}>Stimulus</th>
                   <th style={{ padding: "10px 8px" }}>Type</th>
                   <th style={{ padding: "10px 8px" }}>Letter</th>
@@ -201,7 +208,7 @@ export function AdminPage() {
               </thead>
               <tbody>
                 {selectedRecordings.map((x) => (
-                  <tr key={x.stimulusId} style={{ borderTop: "1px solid var(--border)" }}>
+                  <tr key={x.stimulusId} style={{ borderTop: "1px solid var(--app-border)" }}>
                     <td style={{ padding: "10px 8px", fontFamily: '"Amiri Quran", "Noto Naskh Arabic", serif', direction: "rtl" }}>
                       {x.stimulusTextAr}
                     </td>
@@ -229,7 +236,7 @@ export function AdminPage() {
       <div className="card" style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
-            <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+            <tr style={{ textAlign: "left", color: "var(--app-muted)" }}>
               <th style={{ padding: "10px 8px" }}>Created</th>
               <th style={{ padding: "10px 8px" }}>ID</th>
               <th style={{ padding: "10px 8px" }}>Name</th>
@@ -245,7 +252,7 @@ export function AdminPage() {
             {rows.map((r) => (
               <tr
                 key={r.id}
-                style={{ borderTop: "1px solid var(--border)", cursor: "pointer" }}
+                style={{ borderTop: "1px solid var(--app-border)", cursor: "pointer" }}
                 onClick={() => openResponse(r)}
                 title="Click to view and play recordings"
               >
@@ -283,4 +290,3 @@ export function AdminPage() {
     </div>
   );
 }
-

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Stimulus } from "../stimuli";
+import { Button } from "@/components/ui/button";
 
 type RecordingBlob = {
   stimulus: Stimulus;
@@ -331,9 +332,9 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
             When you are ready, press Record. A short countdown will start before recording begins.
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="primary" onClick={startCountdownAndRecord}>
+            <Button className="btn btn-primary" onClick={startCountdownAndRecord}>
               Record
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -344,7 +345,7 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
           <div className="muted">Get ready… recording will start automatically.</div>
           <div className="muted">{durationHintForStimulus(stimulus)}</div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button
+            <Button
               className="danger"
               onClick={() => {
                 countdownGenRef.current += 1;
@@ -357,7 +358,7 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
               }}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -381,9 +382,9 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
             </div>
           )}
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button className="danger" onClick={stopRecordingEarly}>
+            <Button className="danger" onClick={stopRecordingEarly}>
               Stop
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -395,21 +396,21 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
           </div>
           <audio ref={previewAudioRef} controls src={previewUrl} />
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={redo} className="danger">
+            <Button onClick={redo} className="danger">
               Redo
-            </button>
-            <button className="primary" onClick={saveRecording}>
+            </Button>
+            <Button className="primary" onClick={saveRecording}>
               Save & next
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-        <button disabled={idx === 0} onClick={() => setIdx((p) => Math.max(0, p - 1))}>
+        <Button disabled={idx === 0} onClick={() => setIdx((p) => Math.max(0, p - 1))}>
           Previous
-        </button>
-        <button
+        </Button>
+        <Button
           disabled={idx >= stimuli.length - 1 || !recordings[stimulus.id]}
           title={
             !recordings[stimulus.id]
@@ -419,7 +420,7 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
           onClick={() => setIdx((p) => Math.min(stimuli.length - 1, p + 1))}
         >
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

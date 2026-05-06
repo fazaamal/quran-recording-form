@@ -3,6 +3,17 @@ import { Stimulus, stimuli } from "../stimuli";
 import { SignaturePad } from "../ui/SignaturePad";
 import { RecorderStep } from "../ui/RecorderStep";
 import { apiCreateUploadUrls, apiSubmitResponse } from "../utils/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type TajweedLevel = "beginner" | "intermediate" | "advanced" | "teacher" | "other";
 
@@ -164,9 +175,7 @@ export function ParticipantFlow() {
             consent form, enable your microphone, then record 16 short audio clips.
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button className="primary" onClick={() => setStep("environment")}>
-              Start
-            </button>
+            <Button onClick={() => setStep("environment")}>Start</Button>
             <a className="pill" href="/pdf/consent_form.pdf" target="_blank" rel="noreferrer">
               View consent PDF
             </a>
@@ -186,10 +195,8 @@ export function ParticipantFlow() {
             <li>Close windows, fans, or other noise sources if you can.</li>
           </ul>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => setStep("welcome")}>Back</button>
-            <button className="primary" onClick={() => setStep("info")}>
-              Continue
-            </button>
+            <Button variant="outline" onClick={() => setStep("welcome")}>Back</Button>
+            <Button onClick={() => setStep("info")}>Continue</Button>
           </div>
         </div>
       )}
@@ -198,89 +205,102 @@ export function ParticipantFlow() {
         <div className="card stack">
           <div style={{ fontSize: 18, fontWeight: 750 }}>Participant information</div>
           <div className="row">
-            <label style={{ flex: 1 }}>
-              Name
-              <input
+            <div className="grid gap-2" style={{ flex: 1 }}>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
                 value={info.name}
                 onChange={(e) => setInfo((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Type your name"
                 autoComplete="name"
               />
-            </label>
+            </div>
           </div>
           <div className="row">
-            <label>
-              Tajwīd proficiency level
-              <select
+            <div className="grid gap-2">
+              <Label htmlFor="tajweedLevel">Tajwīd proficiency level</Label>
+              <Select
                 value={info.tajweedLevel}
-                onChange={(e) => setInfo((p) => ({ ...p, tajweedLevel: e.target.value as TajweedLevel }))}
+                onValueChange={(v) => setInfo((p) => ({ ...p, tajweedLevel: v as TajweedLevel }))}
               >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-                <option value="teacher">Teacher / Ijāzah holder</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-            <label>
-              Years reading Quran (approx.)
-              <input
+                <SelectTrigger id="tajweedLevel">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="teacher">Teacher / Ijāzah holder</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="yearsReading">Years reading Quran (approx.)</Label>
+              <Input
+                id="yearsReading"
                 inputMode="numeric"
                 value={info.yearsReading}
-                onChange={(e) => setInfo((p) => ({ ...p, yearsReading: e.target.value === "" ? "" : Number(e.target.value) }))}
+                onChange={(e) =>
+                  setInfo((p) => ({
+                    ...p,
+                    yearsReading: e.target.value === "" ? "" : Number(e.target.value),
+                  }))
+                }
                 placeholder="e.g. 5"
               />
-            </label>
+            </div>
           </div>
           <div className="row">
-            <label>
-              Age
-              <input
+            <div className="grid gap-2">
+              <Label htmlFor="age">Age</Label>
+              <Input
+                id="age"
                 inputMode="numeric"
                 value={info.age}
-                onChange={(e) => setInfo((p) => ({ ...p, age: e.target.value === "" ? "" : Number(e.target.value) }))}
+                onChange={(e) =>
+                  setInfo((p) => ({
+                    ...p,
+                    age: e.target.value === "" ? "" : Number(e.target.value),
+                  }))
+                }
                 placeholder="e.g. 23"
               />
-            </label>
-            <label>
-              Ethnicity
-              <input
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ethnicity">Ethnicity</Label>
+              <Input
+                id="ethnicity"
                 value={info.ethnicity}
                 onChange={(e) => setInfo((p) => ({ ...p, ethnicity: e.target.value }))}
                 placeholder="e.g. Malay"
               />
-            </label>
+            </div>
           </div>
-          <fieldset style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px", margin: 0 }}>
-            <legend style={{ padding: "0 6px", color: "var(--muted)", fontSize: 13 }}>
+          <fieldset style={{ border: "1px solid var(--app-border)", borderRadius: 12, padding: "12px 14px", margin: 0 }}>
+            <legend style={{ padding: "0 6px", color: "var(--app-muted)", fontSize: 13 }}>
               Have you attended formal tajweed classes before?
             </legend>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <input
-                  type="radio"
-                  name="hadTajweed"
-                  checked={info.hadTajweedClasses === true}
-                  onChange={() => setInfo((p) => ({ ...p, hadTajweedClasses: true }))}
-                />
-                Yes
-              </label>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <input
-                  type="radio"
-                  name="hadTajweed"
-                  checked={info.hadTajweedClasses === false}
-                  onChange={() => setInfo((p) => ({ ...p, hadTajweedClasses: false }))}
-                />
-                No
-              </label>
-            </div>
+            <RadioGroup
+              value={info.hadTajweedClasses === null ? "" : String(info.hadTajweedClasses)}
+              onValueChange={(v) =>
+                setInfo((p) => ({ ...p, hadTajweedClasses: v === "true" }))
+              }
+              className="flex gap-6 flex-wrap"
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="true" id="tajweedYes" />
+                <Label htmlFor="tajweedYes">Yes</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="false" id="tajweedNo" />
+                <Label htmlFor="tajweedNo">No</Label>
+              </div>
+            </RadioGroup>
           </fieldset>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => setStep("environment")}>Back</button>
-            <button className="primary" disabled={!infoComplete} onClick={() => setStep("consent")}>
-              Continue
-            </button>
+            <Button variant="outline" onClick={() => setStep("environment")}>Back</Button>
+            <Button disabled={!infoComplete} onClick={() => setStep("consent")}>Continue</Button>
           </div>
         </div>
       )}
@@ -298,9 +318,8 @@ export function ParticipantFlow() {
           </div>
           <SignaturePad value={signaturePngDataUrl} onChange={setSignaturePngDataUrl} />
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => setStep("info")}>Back</button>
-            <button
-              className="primary"
+            <Button variant="outline" onClick={() => setStep("info")}>Back</Button>
+            <Button
               disabled={!signaturePngDataUrl}
               onClick={() => {
                 setMicReady(false);
@@ -309,7 +328,7 @@ export function ParticipantFlow() {
               }}
             >
               Continue
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -328,16 +347,14 @@ export function ParticipantFlow() {
             </div>
           )}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => setStep("consent")}>Back</button>
+            <Button variant="outline" onClick={() => setStep("consent")}>Back</Button>
             {!micReady && (
-              <button className="primary" onClick={enableMicrophone}>
+              <Button onClick={enableMicrophone}>
                 {micError ? "Try again" : "Enable microphone"}
-              </button>
+              </Button>
             )}
             {micReady && (
-              <button className="primary" onClick={() => setStep("recordings")}>
-                Continue to recordings
-              </button>
+              <Button onClick={() => setStep("recordings")}>Continue to recordings</Button>
             )}
           </div>
         </div>
@@ -371,10 +388,10 @@ export function ParticipantFlow() {
           {submitError && <div style={{ color: "var(--danger)" }}>{submitError}</div>}
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => setStep("mic")}>Back</button>
-            <button className="primary" disabled={!allDone || submitting} onClick={submitAll}>
+            <Button variant="outline" onClick={() => setStep("mic")}>Back</Button>
+            <Button disabled={!allDone || submitting} onClick={submitAll}>
               {submitting ? "Submitting..." : "Submit"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
