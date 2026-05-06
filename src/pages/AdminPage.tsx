@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiAdminExportCsv, apiAdminList, apiAdminResponse } from "../utils/api";
-import { BasicAuth, loadBasicAuth, saveBasicAuth } from "../utils/basicAuth";
+import { BasicAuth, basicAuthAuthorizationHeader, loadBasicAuth, saveBasicAuth } from "../utils/basicAuth";
 
 type ResponseRow = {
   id: string;
@@ -34,8 +34,7 @@ export function AdminPage() {
 
   const headers = useMemo(() => {
     if (!authed) return null;
-    const token = btoa(`${auth.user}:${auth.pass}`);
-    return { Authorization: `Basic ${token}` };
+    return basicAuthAuthorizationHeader(auth);
   }, [auth, authed]);
 
   async function refresh() {

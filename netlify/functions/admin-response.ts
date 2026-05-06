@@ -1,10 +1,11 @@
-import type { Handler } from "@netlify/functions";
-import { checkBasicAuth, ensureSchema, presignGet } from "./_shared";
-import { db } from "./_shared";
+import type { Handler } from "@netlify/functions"
+import { checkBasicAuth, ensureSchema, presignGet } from "./_shared"
+import { db } from "./_shared"
 
 export const handler: Handler = async (event) => {
   try {
-    if (event.httpMethod !== "GET") return { statusCode: 405, body: "Method not allowed" };
+    if (event.httpMethod !== "GET")
+      return { statusCode: 405, body: "Method not allowed" }
     if (!checkBasicAuth(event.headers.authorization)) {
       return {
         statusCode: 401,
@@ -13,47 +14,64 @@ export const handler: Handler = async (event) => {
           "WWW-Authenticate": 'Basic realm="Admin"',
         } as Record<string, string>,
         body: "Unauthorized",
-      };
+      }
     }
 
-    const id = event.queryStringParameters?.id;
-    if (!id) return { statusCode: 400, body: "Missing id" };
+    console.log("event", event)
 
-    await ensureSchema();
-    const pool = db();
+    const id = event.queryStringParameters?.id
+    if (!id) return { statusCode: 400, body: "Missing id" }
+
+    await ensureSchema()
+    const pool = db()
 
     const resp = await pool.query(
       `select id, created_at, tajweed_level, years_reading, age, ethnicity, had_tajweed_classes, signed_consent_s3_key
        from responses where id=$1`,
       [id]
-    );
-    if (resp.rows.length === 0) return { statusCode: 404, body: "Not found" };
-    const r = resp.rows[0]!;
+    )
+    if (resp.rows.length === 0) return { statusCode: 404, body: "Not found" }
+    const r = resp.rows[0]!
 
     const recs = await pool.query(
       `select stimulus_id, stimulus_text_ar, kind, letter, harakah, s3_key, content_type, duration_ms
        from recordings where response_id=$1
        order by stimulus_id asc`,
       [id]
-    );
+    )
 
     const recordings = await Promise.all(
-      recs.rows.map(async (x: any) => ({
-        stimulusId: x.stimulus_id as string,
-        stimulusTextAr: x.stimulus_text_ar as string,
-        kind: x.kind as string,
-        letter: x.letter as string,
-        harakah: x.harakah as string,
-        s3Key: x.s3_key as string,
-        contentType: x.content_type as string,
-        durationMs: x.duration_ms as number,
-        url: await presignGet({ key: x.s3_key as string }),
-      }))
-    );
+      recs.rows.map(async (x: any) => {
+        let url = ""
+        try {
+          url = await presignGet({ key: x.s3_key as string })
+        } catch {
+          url = ""
+        }
+        return {
+          stimulusId: x.stimulus_id as string,
+          stimulusTextAr: x.stimulus_text_ar as string,
+          kind: x.kind as string,
+          letter: x.letter as string,
+          harakah: x.harakah as string,
+          s3Key: x.s3_key as string,
+          contentType: x.content_type as string,
+          durationMs: x.duration_ms as number,
+          url,
+        }
+      })
+    )
 
-    const signedConsentUrl = r.signed_consent_s3_key
-      ? await presignGet({ key: r.signed_consent_s3_key as string })
-      : null;
+    let signedConsentUrl: string | null = null
+    if (r.signed_consent_s3_key) {
+      try {
+        signedConsentUrl = await presignGet({
+          key: r.signed_consent_s3_key as string,
+        })
+      } catch {
+        signedConsentUrl = null
+      }
+    }
 
     return {
       statusCode: 200,
@@ -71,9 +89,11 @@ export const handler: Handler = async (event) => {
         },
         recordings,
       }),
-    };
+    }
   } catch (e) {
-    return { statusCode: 500, body: e instanceof Error ? e.message : "Server error" };
+    return {
+      statusCode: 500,
+      body: e instanceof Error ? e.message : "Server error",
+    }
   }
-};
-
+}

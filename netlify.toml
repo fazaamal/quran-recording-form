@@ -2,6 +2,17 @@
   command = "npm run build"
   publish = "dist"
 
+# Run `npm run dev` (Netlify CLI) so /api/* is routed to functions. Open the URL
+# Netlify prints (port 8888), not raw Vite.
+# Use an empty publish dir in dev so dist/_redirects SPA fallback does not run;
+# that rule would rewrite /@vite/* and /src/* to index.html and break Vite.
+[dev]
+  command = "npm run dev:vite"
+  targetPort = 5173
+  port = 8888
+  publish = "dev-proxy-publish"
+  framework = "vite"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
@@ -11,7 +22,5 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# SPA fallback lives in public/_redirects (copied to dist on build). Keeping it
+# out of netlify.toml avoids Netlify dev applying /* → index.html to Vite assets.

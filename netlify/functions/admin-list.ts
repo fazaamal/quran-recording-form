@@ -26,18 +26,26 @@ export const handler: Handler = async (event) => {
     );
 
     const responses = await Promise.all(
-      rows.map(async (r: any) => ({
-        id: r.id as string,
-        createdAt: (r.created_at as Date).toISOString(),
-        tajweedLevel: r.tajweed_level as string,
-        yearsReading: r.years_reading as number,
-        age: r.age as number,
-        ethnicity: r.ethnicity as string,
-        hadTajweedClasses: Boolean(r.had_tajweed_classes),
-        signedConsentUrl: r.signed_consent_s3_key
-          ? await presignGet({ key: r.signed_consent_s3_key as string })
-          : null,
-      }))
+      rows.map(async (r: any) => {
+        let signedConsentUrl: string | null = null;
+        if (r.signed_consent_s3_key) {
+          try {
+            signedConsentUrl = await presignGet({ key: r.signed_consent_s3_key as string });
+          } catch {
+            signedConsentUrl = null;
+          }
+        }
+        return {
+          id: r.id as string,
+          createdAt: (r.created_at as Date).toISOString(),
+          tajweedLevel: r.tajweed_level as string,
+          yearsReading: r.years_reading as number,
+          age: r.age as number,
+          ethnicity: r.ethnicity as string,
+          hadTajweedClasses: Boolean(r.had_tajweed_classes),
+          signedConsentUrl,
+        };
+      })
     );
 
     return {
