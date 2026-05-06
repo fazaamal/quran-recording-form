@@ -1,9 +1,27 @@
-import { checkBasicAuth, ensureSchema, presignGet } from "./_shared"
+import {
+  checkBasicAuth,
+  ensureSchema,
+  presignGet,
+  s3,
+  s3Bucket,
+} from "./_shared"
 import { db } from "./_shared"
+import { ListObjectsV2Command } from "@aws-sdk/client-s3"
 import type { Context } from "@netlify/functions"
 
 export default async (req: Request, _context: Context) => {
   try {
+    console.log("admin-list", req.method)
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+        },
+      })
+    }
     if (req.method !== "GET")
       return new Response("Method not allowed", { status: 405 })
     if (!checkBasicAuth(req.headers.get("authorization") ?? undefined)) {

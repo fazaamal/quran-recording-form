@@ -204,6 +204,7 @@ export default async (req: Request, _context: Context) => {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     })
   } catch (e) {
+    console.error("submit-response", e)
     return new Response(e instanceof Error ? e.message : "Server error", {
       status: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8" },

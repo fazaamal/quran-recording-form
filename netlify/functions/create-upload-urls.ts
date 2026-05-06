@@ -44,6 +44,12 @@ export default async (req: Request, _context: Context) => {
     requireEnv("S3_AWS_REGION")
     requireEnv("S3_BUCKET")
 
+    console.log("create-upload-urls", {
+      signaturePutUrl,
+      signatureKey,
+      recordings,
+    })
+
     return new Response(
       JSON.stringify({
         signature: { putUrl: signaturePutUrl, s3Key: signatureKey },
@@ -52,6 +58,7 @@ export default async (req: Request, _context: Context) => {
       { headers: { "Content-Type": "application/json; charset=utf-8" } }
     )
   } catch (e) {
+    console.error("create-upload-urls", e)
     return new Response(e instanceof Error ? e.message : "Server error", {
       status: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8" },

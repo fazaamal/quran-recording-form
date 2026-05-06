@@ -30,6 +30,11 @@ export function s3() {
     ...(credentials ? { credentials } : {}),
     ...(endpoint?.trim() ? { endpoint: endpoint.trim() } : {}),
     ...(forcePathStyle ? { forcePathStyle: true } : {}),
+    // Prevent SDK from injecting x-amz-checksum-crc32 into presigned URLs;
+    // B2 and many S3-compatible stores don't support these headers and reject
+    // the CORS preflight, causing "TypeError: Load failed" in the browser.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   })
 }
 

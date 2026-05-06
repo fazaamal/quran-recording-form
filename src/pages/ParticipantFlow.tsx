@@ -48,6 +48,7 @@ export function ParticipantFlow() {
   const [signaturePngDataUrl, setSignaturePngDataUrl] = useState<string | null>(null);
   const [micReady, setMicReady] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   const [recordings, setRecordings] = useState<Record<string, RecordingBlob | undefined>>({});
   const allDone = useMemo(
@@ -104,6 +105,8 @@ export function ParticipantFlow() {
         method: "PUT",
         headers: { "Content-Type": "image/png" },
         body: signaturePngBlob,
+      }).catch((e) => {
+        setTestError(uploadPlan.signature.putUrl);
       });
 
       for (const s of stimuli) {
@@ -393,6 +396,7 @@ export function ParticipantFlow() {
               {submitting ? "Submitting..." : "Submit"}
             </Button>
           </div>
+          {testError && <div style={{ color: "var(--danger)" }}>{testError}</div>}
         </div>
       )}
 
