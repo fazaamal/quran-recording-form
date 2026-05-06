@@ -19,7 +19,7 @@ export function App() {
       <div className="topbar">
         <div className="brand">
           <div className="brandTitle">Quran Recording Study</div>
-          <div className="brandSubtitle">Audio + consent collection form</div>
+          <div className="brandSubtitle">Tajweed recording study</div>
         </div>
         <a className="pill" href={mode.name === "admin" ? "/" : "/admin"}>
           {mode.name === "admin" ? "Participant form" : "Admin dashboard"}
@@ -27,6 +27,7 @@ export function App() {
       </div>
 
       {mode.name === "admin" ? <AdminPage /> : <ParticipantFlow />}
+
     </div>
   );
 }

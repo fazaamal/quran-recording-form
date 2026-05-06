@@ -12,6 +12,27 @@ import {
 import { PutObjectCommand } from "@aws-sdk/client-s3"
 import type { Context } from "@netlify/functions"
 
+const CONSENT_PAGE_INDEX = 2
+
+const CONSENT_SIG_X = 75
+const CONSENT_SIG_Y = 280
+
+const CONSENT_SIG_W = 170
+const CONSENT_SIG_H = 80
+
+const CONSENT_NAME_X = 95
+const CONSENT_NAME_Y = 110
+const CONSENT_NAME_MAX_WIDTH = 145
+
+const CONSENT_DATE_X = 400
+const CONSENT_DATE_Y = 240
+
+const CONSENT_TEXT_FONT_SIZE = 14
+
+function yFromTop(pageHeight: number, yTop: number) {
+  return pageHeight - yTop
+}
+
 type Req = {
   participant: {
     name: string
@@ -34,13 +55,6 @@ type Req = {
   }[]
 }
 
-function numEnv(name: string, fallback: number) {
-  const raw = process.env[name]
-  if (!raw) return fallback
-  const n = Number(raw)
-  return Number.isFinite(n) ? n : fallback
-}
-
 async function generateSignedConsentPdf(
   signaturePngBytes: Buffer,
   responseId: string,
@@ -51,19 +65,12 @@ async function generateSignedConsentPdf(
 
   const pdf = await PDFDocument.load(templateBytes)
   const pages = pdf.getPages()
-  const pageIndex = Math.min(
-    Math.max(0, numEnv("CONSENT_SIG_PAGE", 0)),
-    pages.length - 1
-  )
+  const pageIndex = Math.min(Math.max(0, CONSENT_PAGE_INDEX), pages.length - 1)
   const page = pages[pageIndex]!
 
   const png = await pdf.embedPng(signaturePngBytes)
   const font = await pdf.embedFont(StandardFonts.Helvetica)
-
-  const x = numEnv("CONSENT_SIG_X", 80)
-  const y = numEnv("CONSENT_SIG_Y", 120)
-  const w = numEnv("CONSENT_SIG_W", 220)
-  const h = numEnv("CONSENT_SIG_H", 80)
+  const pageHeight = page.getHeight()
 
   const now = new Date()
   const dd = String(now.getDate()).padStart(2, "0")
@@ -72,19 +79,24 @@ async function generateSignedConsentPdf(
   const dateStr = `${dd}/${mm}/${yyyy}`
 
   page.drawText(participantName, {
-    x: 85,
-    y: 115,
-    size: 16,
-    maxWidth: 145,
+    x: CONSENT_NAME_X,
+    y: yFromTop(pageHeight, CONSENT_NAME_Y),
+    size: CONSENT_TEXT_FONT_SIZE,
+    maxWidth: CONSENT_NAME_MAX_WIDTH,
     font,
   })
   page.drawText(dateStr, {
-    x: 400,
-    y: 240,
-    size: 16,
+    x: CONSENT_DATE_X,
+    y: yFromTop(pageHeight, CONSENT_DATE_Y),
+    size: CONSENT_TEXT_FONT_SIZE,
     font,
   })
-  page.drawImage(png, { x, y, width: w, height: h })
+  page.drawImage(png, {
+    x: CONSENT_SIG_X,
+    y: yFromTop(pageHeight, CONSENT_SIG_Y),
+    width: CONSENT_SIG_W,
+    height: CONSENT_SIG_H,
+  })
 
   const out = await pdf.save()
   return Buffer.from(out)
@@ -105,7 +117,10 @@ export default async (req: Request, _context: Context) => {
     if (body.recordings.length !== 16) {
       return new Response("Expected 16 recordings", { status: 400 })
     }
-    if (typeof body.participant.name !== "string" || !body.participant.name.trim()) {
+    if (
+      typeof body.participant.name !== "string" ||
+      !body.participant.name.trim()
+    ) {
       return new Response("Invalid participant.name", { status: 400 })
     }
     if (typeof body.participant.hadTajweedClasses !== "boolean") {
