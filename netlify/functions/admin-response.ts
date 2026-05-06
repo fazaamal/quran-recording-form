@@ -1,8 +1,9 @@
 import type { Handler } from "@netlify/functions"
 import { checkBasicAuth, ensureSchema, presignGet } from "./_shared"
 import { db } from "./_shared"
+import type { Context } from "@netlify/functions"
 
-export const handler: Handler = async (event) => {
+export default async (req: Request, context: Context) => {
   try {
     if (event.httpMethod !== "GET")
       return { statusCode: 405, body: "Method not allowed" }

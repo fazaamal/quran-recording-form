@@ -11,6 +11,7 @@ import {
   s3Bucket,
 } from "./_shared"
 import { PutObjectCommand } from "@aws-sdk/client-s3"
+import type { Context } from "@netlify/functions"
 
 type Req = {
   participant: {
@@ -68,7 +69,7 @@ async function generateSignedConsentPdf(
   return Buffer.from(out)
 }
 
-export const handler: Handler = async (event) => {
+export default async (req: Request, context: Context) => {
   try {
     if (event.httpMethod !== "POST")
       return { statusCode: 405, body: "Method not allowed" }

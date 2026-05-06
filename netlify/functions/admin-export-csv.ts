@@ -1,16 +1,18 @@
-import type { Handler } from "@netlify/functions";
-import { checkBasicAuth, ensureSchema, presignGet } from "./_shared";
-import { db } from "./_shared";
+import type { Handler } from "@netlify/functions"
+import { checkBasicAuth, ensureSchema, presignGet } from "./_shared"
+import { db } from "./_shared"
+import type { Context } from "@netlify/functions"
 
 function csvEscape(v: unknown) {
-  const s = String(v ?? "");
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
+  const s = String(v ?? "")
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+  return s
 }
 
-export const handler: Handler = async (event) => {
+export default async (req: Request, context: Context) => {
   try {
-    if (event.httpMethod !== "GET") return { statusCode: 405, body: "Method not allowed" };
+    if (event.httpMethod !== "GET")
+      return { statusCode: 405, body: "Method not allowed" }
     if (!checkBasicAuth(event.headers.authorization)) {
       return {
         statusCode: 401,
@@ -19,11 +21,11 @@ export const handler: Handler = async (event) => {
           "WWW-Authenticate": 'Basic realm="Admin"',
         } as Record<string, string>,
         body: "Unauthorized",
-      };
+      }
     }
 
-    await ensureSchema();
-    const pool = db();
+    await ensureSchema()
+    const pool = db()
     const { rows } = await pool.query(
       `select r.id as response_id, r.created_at, r.tajweed_level, r.years_reading, r.age, r.ethnicity,
               r.had_tajweed_classes, r.signed_consent_s3_key,
@@ -33,7 +35,7 @@ export const handler: Handler = async (event) => {
        join recordings rec on rec.response_id = r.id
        order by r.created_at desc, rec.stimulus_id asc
        limit 5000`
-    );
+    )
 
     const header = [
       "response_id",
@@ -51,16 +53,16 @@ export const handler: Handler = async (event) => {
       "duration_ms",
       "recording_url",
       "signed_consent_url",
-    ];
+    ]
 
-    const lines: string[] = [];
-    lines.push(header.map(csvEscape).join(","));
+    const lines: string[] = []
+    lines.push(header.map(csvEscape).join(","))
 
     for (const x of rows) {
-      const recordingUrl = await presignGet({ key: x.s3_key as string });
+      const recordingUrl = await presignGet({ key: x.s3_key as string })
       const signedConsentUrl = x.signed_consent_s3_key
         ? await presignGet({ key: x.signed_consent_s3_key as string })
-        : "";
+        : ""
 
       const row = [
         x.response_id,
@@ -78,8 +80,8 @@ export const handler: Handler = async (event) => {
         x.duration_ms,
         recordingUrl,
         signedConsentUrl,
-      ];
-      lines.push(row.map(csvEscape).join(","));
+      ]
+      lines.push(row.map(csvEscape).join(","))
     }
 
     return {
@@ -89,9 +91,11 @@ export const handler: Handler = async (event) => {
         "Content-Disposition": `attachment; filename="responses.csv"`,
       } as Record<string, string>,
       body: lines.join("\n"),
-    };
+    }
   } catch (e) {
-    return { statusCode: 500, body: e instanceof Error ? e.message : "Server error" };
+    return {
+      statusCode: 500,
+      body: e instanceof Error ? e.message : "Server error",
+    }
   }
-};
-
+}

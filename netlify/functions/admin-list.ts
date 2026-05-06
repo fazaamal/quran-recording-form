@@ -1,10 +1,12 @@
-import type { Handler } from "@netlify/functions";
-import { checkBasicAuth, ensureSchema, presignGet } from "./_shared";
-import { db } from "./_shared";
+import type { Handler } from "@netlify/functions"
+import { checkBasicAuth, ensureSchema, presignGet } from "./_shared"
+import { db } from "./_shared"
+import type { Context } from "@netlify/functions"
 
-export const handler: Handler = async (event) => {
+export default async (req: Request, context: Context) => {
   try {
-    if (event.httpMethod !== "GET") return { statusCode: 405, body: "Method not allowed" };
+    if (event.httpMethod !== "GET")
+      return { statusCode: 405, body: "Method not allowed" }
     if (!checkBasicAuth(event.headers.authorization)) {
       return {
         statusCode: 401,
@@ -13,26 +15,28 @@ export const handler: Handler = async (event) => {
           "WWW-Authenticate": 'Basic realm="Admin"',
         } as Record<string, string>,
         body: "Unauthorized",
-      };
+      }
     }
 
-    await ensureSchema();
-    const pool = db();
+    await ensureSchema()
+    const pool = db()
     const { rows } = await pool.query(
       `select id, created_at, tajweed_level, years_reading, age, ethnicity, had_tajweed_classes, signed_consent_s3_key
        from responses
        order by created_at desc
        limit 500`
-    );
+    )
 
     const responses = await Promise.all(
       rows.map(async (r: any) => {
-        let signedConsentUrl: string | null = null;
+        let signedConsentUrl: string | null = null
         if (r.signed_consent_s3_key) {
           try {
-            signedConsentUrl = await presignGet({ key: r.signed_consent_s3_key as string });
+            signedConsentUrl = await presignGet({
+              key: r.signed_consent_s3_key as string,
+            })
           } catch {
-            signedConsentUrl = null;
+            signedConsentUrl = null
           }
         }
         return {
@@ -44,17 +48,19 @@ export const handler: Handler = async (event) => {
           ethnicity: r.ethnicity as string,
           hadTajweedClasses: Boolean(r.had_tajweed_classes),
           signedConsentUrl,
-        };
+        }
       })
-    );
+    )
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" } as Record<string, string>,
       body: JSON.stringify({ responses }),
-    };
+    }
   } catch (e) {
-    return { statusCode: 500, body: e instanceof Error ? e.message : "Server error" };
+    return {
+      statusCode: 500,
+      body: e instanceof Error ? e.message : "Server error",
+    }
   }
-};
-
+}

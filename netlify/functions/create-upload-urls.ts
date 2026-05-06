@@ -1,12 +1,13 @@
 import type { Handler } from "@netlify/functions"
 import { newId, nowIso, presignPut, requireEnv } from "./_shared"
+import type { Context } from "@netlify/functions"
 
 type Req = {
   recordings: { stimulusId: string; contentType: string }[]
   signature: { contentType: string }
 }
 
-export const handler: Handler = async (event) => {
+export default async (req: Request, context: Context) => {
   try {
     if (event.httpMethod !== "POST")
       return { statusCode: 405, body: "Method not allowed" }
