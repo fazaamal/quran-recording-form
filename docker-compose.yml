@@ -5,9 +5,9 @@
 #   POSTGRES_URL=postgres://qrf:qrf_dev_secret@localhost:5432/quran_recording
 #   S3_ENDPOINT=http://127.0.0.1:9000
 #   S3_FORCE_PATH_STYLE=true
-#   AWS_REGION=us-east-1
-#   AWS_ACCESS_KEY_ID=minioadmin
-#   AWS_SECRET_ACCESS_KEY=minioadminsecret
+#   S3_AWS_REGION=us-east-1
+#   S3_AWS_ACCESS_KEY_ID=minioadmin
+#   S3_AWS_SECRET_ACCESS_KEY=minioadminsecret
 #   S3_BUCKET=quran-recording-local
 
 services:

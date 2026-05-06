@@ -1,7 +1,7 @@
-import type { Handler } from "@netlify/functions";
-import { PDFDocument } from "pdf-lib";
-import path from "node:path";
-import fs from "node:fs";
+import type { Handler } from "@netlify/functions"
+import { PDFDocument } from "pdf-lib"
+import path from "node:path"
+import fs from "node:fs"
 import {
   ensureSchema,
   newId,
@@ -9,81 +9,92 @@ import {
   requireEnv,
   s3,
   s3Bucket,
-} from "./_shared";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+} from "./_shared"
+import { PutObjectCommand } from "@aws-sdk/client-s3"
 
 type Req = {
   participant: {
-    tajweedLevel: string;
-    yearsReading: number;
-    age: number;
-    ethnicity: string;
-    hadTajweedClasses: boolean;
-  };
-  signature: { s3Key: string };
+    tajweedLevel: string
+    yearsReading: number
+    age: number
+    ethnicity: string
+    hadTajweedClasses: boolean
+  }
+  signature: { s3Key: string }
   recordings: {
-    stimulusId: string;
-    stimulusTextAr: string;
-    kind: "letter" | "word";
-    letter: "dad" | "ayn";
-    harakah: "fatha" | "kasra" | "damma" | "sukoon";
-    s3Key: string;
-    contentType: string;
-    durationMs: number;
-  }[];
-};
-
-function numEnv(name: string, fallback: number) {
-  const raw = process.env[name];
-  if (!raw) return fallback;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : fallback;
+    stimulusId: string
+    stimulusTextAr: string
+    kind: "letter" | "word"
+    letter: "dad" | "ayn"
+    harakah: "fatha" | "kasra" | "damma" | "sukoon"
+    s3Key: string
+    contentType: string
+    durationMs: number
+  }[]
 }
 
-async function generateSignedConsentPdf(signaturePngBytes: Buffer, responseId: string) {
-  const templatePath = path.join(process.cwd(), "pdf", "consent_form.pdf");
-  const templateBytes = fs.readFileSync(templatePath);
+function numEnv(name: string, fallback: number) {
+  const raw = process.env[name]
+  if (!raw) return fallback
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : fallback
+}
 
-  const pdf = await PDFDocument.load(templateBytes);
-  const pages = pdf.getPages();
-  const pageIndex = Math.min(Math.max(0, numEnv("CONSENT_SIG_PAGE", 0)), pages.length - 1);
-  const page = pages[pageIndex]!;
+async function generateSignedConsentPdf(
+  signaturePngBytes: Buffer,
+  responseId: string
+) {
+  const templatePath = path.join(process.cwd(), "pdf", "consent_form.pdf")
+  const templateBytes = fs.readFileSync(templatePath)
 
-  const png = await pdf.embedPng(signaturePngBytes);
+  const pdf = await PDFDocument.load(templateBytes)
+  const pages = pdf.getPages()
+  const pageIndex = Math.min(
+    Math.max(0, numEnv("CONSENT_SIG_PAGE", 0)),
+    pages.length - 1
+  )
+  const page = pages[pageIndex]!
 
-  const x = numEnv("CONSENT_SIG_X", 80);
-  const y = numEnv("CONSENT_SIG_Y", 120);
-  const w = numEnv("CONSENT_SIG_W", 220);
-  const h = numEnv("CONSENT_SIG_H", 80);
+  const png = await pdf.embedPng(signaturePngBytes)
 
-  page.drawImage(png, { x, y, width: w, height: h });
+  const x = numEnv("CONSENT_SIG_X", 80)
+  const y = numEnv("CONSENT_SIG_Y", 120)
+  const w = numEnv("CONSENT_SIG_W", 220)
+  const h = numEnv("CONSENT_SIG_H", 80)
 
-  const out = await pdf.save();
-  return Buffer.from(out);
+  page.drawImage(png, { x, y, width: w, height: h })
+
+  const out = await pdf.save()
+  return Buffer.from(out)
 }
 
 export const handler: Handler = async (event) => {
   try {
-    if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method not allowed" };
-    const body = JSON.parse(event.body || "{}") as Req;
-    if (!body.participant || !body.signature?.s3Key || !Array.isArray(body.recordings)) {
-      return { statusCode: 400, body: "Invalid request" };
+    if (event.httpMethod !== "POST")
+      return { statusCode: 405, body: "Method not allowed" }
+    const body = JSON.parse(event.body || "{}") as Req
+    if (
+      !body.participant ||
+      !body.signature?.s3Key ||
+      !Array.isArray(body.recordings)
+    ) {
+      return { statusCode: 400, body: "Invalid request" }
     }
     if (body.recordings.length !== 16) {
-      return { statusCode: 400, body: "Expected 16 recordings" };
+      return { statusCode: 400, body: "Expected 16 recordings" }
     }
     if (typeof body.participant.hadTajweedClasses !== "boolean") {
-      return { statusCode: 400, body: "Invalid participant.hadTajweedClasses" };
+      return { statusCode: 400, body: "Invalid participant.hadTajweedClasses" }
     }
 
-    requireEnv("POSTGRES_URL");
-    requireEnv("AWS_REGION");
-    requireEnv("S3_BUCKET");
+    requireEnv("POSTGRES_URL")
+    requireEnv("S3_AWS_REGION")
+    requireEnv("S3_BUCKET")
 
-    await ensureSchema();
-    const responseId = newId("resp");
+    await ensureSchema()
+    const responseId = newId("resp")
 
-    const pool = (await import("./_shared")).db();
+    const pool = (await import("./_shared")).db()
     await pool.query(
       `insert into responses (id, tajweed_level, years_reading, age, ethnicity, had_tajweed_classes, signature_s3_key)
        values ($1,$2,$3,$4,$5,$6,$7)`,
@@ -96,10 +107,10 @@ export const handler: Handler = async (event) => {
         body.participant.hadTajweedClasses,
         body.signature.s3Key,
       ]
-    );
+    )
 
     for (const r of body.recordings) {
-      const recId = newId("rec");
+      const recId = newId("rec")
       await pool.query(
         `insert into recordings
          (id, response_id, stimulus_id, stimulus_text_ar, kind, letter, harakah, s3_key, content_type, duration_ms)
@@ -116,17 +127,20 @@ export const handler: Handler = async (event) => {
           r.contentType,
           r.durationMs,
         ]
-      );
+      )
     }
 
     // Build signed consent pdf from template + signature stored in S3
-    const signatureBytes = await readS3ToBuffer(body.signature.s3Key);
-    const signedPdfBytes = await generateSignedConsentPdf(signatureBytes, responseId);
+    const signatureBytes = await readS3ToBuffer(body.signature.s3Key)
+    const signedPdfBytes = await generateSignedConsentPdf(
+      signatureBytes,
+      responseId
+    )
 
-    const prefix = process.env["S3_PREFIX"] ?? "qrf";
-    const signedKey = `${prefix}/signed-consent/${responseId}.pdf`;
-    const client = s3();
-    const bucket = s3Bucket();
+    const prefix = process.env["S3_PREFIX"] ?? "qrf"
+    const signedKey = `${prefix}/signed-consent/${responseId}.pdf`
+    const client = s3()
+    const bucket = s3Bucket()
     await client.send(
       new PutObjectCommand({
         Bucket: bucket,
@@ -134,21 +148,23 @@ export const handler: Handler = async (event) => {
         Body: signedPdfBytes,
         ContentType: "application/pdf",
       })
-    );
+    )
 
-    await pool.query(`update responses set signed_consent_s3_key=$2 where id=$1`, [
-      responseId,
-      signedKey,
-    ]);
+    await pool.query(
+      `update responses set signed_consent_s3_key=$2 where id=$1`,
+      [responseId, signedKey]
+    )
 
     // Returning only response id; admin APIs can presign later
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ responseId }),
-    };
+    }
   } catch (e) {
-    return { statusCode: 500, body: e instanceof Error ? e.message : "Server error" };
+    return {
+      statusCode: 500,
+      body: e instanceof Error ? e.message : "Server error",
+    }
   }
-};
-
+}
