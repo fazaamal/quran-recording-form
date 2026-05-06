@@ -1,4 +1,3 @@
-import type { Handler } from "@netlify/functions"
 import { PDFDocument } from "pdf-lib"
 import path from "node:path"
 import fs from "node:fs"
@@ -69,11 +68,11 @@ async function generateSignedConsentPdf(
   return Buffer.from(out)
 }
 
-export default async (req: Request, context: Context) => {
+export default async (req: Request, _context: Context) => {
   try {
-    if (event.httpMethod !== "POST")
+    if (req.method !== "POST")
       return { statusCode: 405, body: "Method not allowed" }
-    const body = JSON.parse(event.body || "{}") as Req
+    const body = JSON.parse((await req.text()) || "{}") as Req
     if (
       !body.participant ||
       !body.signature?.s3Key ||

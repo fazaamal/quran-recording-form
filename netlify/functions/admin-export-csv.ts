@@ -1,4 +1,3 @@
-import type { Handler } from "@netlify/functions"
 import { checkBasicAuth, ensureSchema, presignGet } from "./_shared"
 import { db } from "./_shared"
 import type { Context } from "@netlify/functions"
@@ -9,11 +8,11 @@ function csvEscape(v: unknown) {
   return s
 }
 
-export default async (req: Request, context: Context) => {
+export default async (req: Request, _context: Context) => {
   try {
-    if (event.httpMethod !== "GET")
+    if (req.method !== "GET")
       return { statusCode: 405, body: "Method not allowed" }
-    if (!checkBasicAuth(event.headers.authorization)) {
+    if (!checkBasicAuth(req.headers.get("authorization") ?? undefined)) {
       return {
         statusCode: 401,
         headers: {

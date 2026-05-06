@@ -1,4 +1,3 @@
-import type { Handler } from "@netlify/functions"
 import { newId, nowIso, presignPut, requireEnv } from "./_shared"
 import type { Context } from "@netlify/functions"
 
@@ -7,11 +6,11 @@ type Req = {
   signature: { contentType: string }
 }
 
-export default async (req: Request, context: Context) => {
+export default async (req: Request, _context: Context) => {
   try {
-    if (event.httpMethod !== "POST")
+    if (req.method !== "POST")
       return { statusCode: 405, body: "Method not allowed" }
-    const body = JSON.parse(event.body || "{}") as Req
+    const body = JSON.parse((await req.text()) || "{}") as Req
     if (!Array.isArray(body.recordings) || !body.signature?.contentType) {
       return { statusCode: 400, body: "Invalid request" }
     }
