@@ -85,27 +85,36 @@ async function json<T>(res: Response): Promise<T> {
 export async function apiCreateUploadUrls(
   body: CreateUploadUrlsReq
 ): Promise<CreateUploadUrlsRes> {
-  const res = await fetch("/create-upload-urls", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
+  const res = await fetch(
+    "http://localhost:8888/.netlify/functions/create-upload-urls",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  )
   return json<CreateUploadUrlsRes>(res)
 }
 
 export async function apiSubmitResponse(
   body: SubmitResponseReq
 ): Promise<SubmitResponseRes> {
-  const res = await fetch("/submit-response", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
+  const res = await fetch(
+    "http://localhost:8888/.netlify/functions/submit-response",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  )
   return json<SubmitResponseRes>(res)
 }
 
 export async function apiAdminList(headers: Record<string, string>) {
-  const res = await fetch("/admin-list", { headers })
+  const res = await fetch(
+    "http://localhost:8888/.netlify/functions/admin-list",
+    { headers }
+  )
   return json<{ responses: any[] }>(res)
 }
 
@@ -113,14 +122,22 @@ export async function apiAdminResponse(
   headers: Record<string, string>,
   id: string
 ) {
-  const res = await fetch(`/api/admin-response?id=${encodeURIComponent(id)}`, {
-    headers,
-  })
+  const res = await fetch(
+    `http://localhost:8888/.netlify/functions/admin-response?id=${encodeURIComponent(
+      id
+    )}`,
+    {
+      headers,
+    }
+  )
   return json<{ response: any; recordings: any[] }>(res)
 }
 
 export async function apiAdminExportCsv(headers: Record<string, string>) {
-  const res = await fetch("/admin-export-csv", { headers })
+  const res = await fetch(
+    "http://localhost:8888/.netlify/functions/admin-export-csv",
+    { headers }
+  )
   if (!res.ok) throw new Error(`Export failed (${res.status})`)
   return await res.blob()
 }
