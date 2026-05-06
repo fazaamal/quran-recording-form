@@ -4,8 +4,8 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
-import { nanoid } from "nanoid"
 import { Pool } from "pg"
+import { randomBytes } from "node:crypto"
 import { Readable } from "node:stream"
 
 export function requireEnv(name: string): string {
@@ -38,7 +38,9 @@ export function s3Bucket() {
 }
 
 export function newId(prefix?: string) {
-  const id = nanoid(16)
+  // Avoid `nanoid` (ESM-only) so Netlify dev can bundle to CJS.
+  // 12 bytes => 16 chars in base64url, close to prior nanoid(16).
+  const id = randomBytes(12).toString("base64url")
   return prefix ? `${prefix}_${id}` : id
 }
 

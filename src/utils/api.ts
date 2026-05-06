@@ -1,3 +1,6 @@
+const NETLIFY_FUNCTIONS_BASE_URL = import.meta.env
+  .VITE_NETLIFY_FUNCTIONS_BASE_URL
+
 type CreateUploadUrlsReq = {
   recordings: { stimulusId: string; contentType: string }[]
   signature: { contentType: string }
@@ -85,36 +88,29 @@ async function json<T>(res: Response): Promise<T> {
 export async function apiCreateUploadUrls(
   body: CreateUploadUrlsReq
 ): Promise<CreateUploadUrlsRes> {
-  const res = await fetch(
-    "http://localhost:8888/.netlify/functions/create-upload-urls",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }
-  )
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/create-upload-urls`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
   return json<CreateUploadUrlsRes>(res)
 }
 
 export async function apiSubmitResponse(
   body: SubmitResponseReq
 ): Promise<SubmitResponseRes> {
-  const res = await fetch(
-    "http://localhost:8888/.netlify/functions/submit-response",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }
-  )
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/submit-response`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
   return json<SubmitResponseRes>(res)
 }
 
 export async function apiAdminList(headers: Record<string, string>) {
-  const res = await fetch(
-    "http://localhost:8888/.netlify/functions/admin-list",
-    { headers }
-  )
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/admin-list`, {
+    headers,
+  })
   return json<{ responses: any[] }>(res)
 }
 
@@ -123,9 +119,7 @@ export async function apiAdminResponse(
   id: string
 ) {
   const res = await fetch(
-    `http://localhost:8888/.netlify/functions/admin-response?id=${encodeURIComponent(
-      id
-    )}`,
+    `${NETLIFY_FUNCTIONS_BASE_URL}/admin-response?id=${encodeURIComponent(id)}`,
     {
       headers,
     }
@@ -134,10 +128,9 @@ export async function apiAdminResponse(
 }
 
 export async function apiAdminExportCsv(headers: Record<string, string>) {
-  const res = await fetch(
-    "http://localhost:8888/.netlify/functions/admin-export-csv",
-    { headers }
-  )
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/admin-export-csv`, {
+    headers,
+  })
   if (!res.ok) throw new Error(`Export failed (${res.status})`)
   return await res.blob()
 }

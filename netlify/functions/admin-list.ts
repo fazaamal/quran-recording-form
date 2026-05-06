@@ -3,7 +3,6 @@ import { db } from "./_shared"
 import type { Context } from "@netlify/functions"
 
 export default async (req: Request, _context: Context) => {
-  console.log("admin-list", req)
   try {
     if (req.method !== "GET")
       return new Response("Method not allowed", { status: 405 })
@@ -55,6 +54,7 @@ export default async (req: Request, _context: Context) => {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     })
   } catch (e) {
+    console.error("admin-list", e)
     return new Response(e instanceof Error ? e.message : "Server error", {
       status: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
