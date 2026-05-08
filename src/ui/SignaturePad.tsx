@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useRef } from "react";
 
 type Props = {
@@ -160,7 +161,7 @@ export function SignaturePad({ value, onChange }: Props) {
         />
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button
+        <Button
           className="danger"
           onClick={() => {
             const canvas = canvasRef.current;
@@ -175,7 +176,7 @@ export function SignaturePad({ value, onChange }: Props) {
           }}
         >
           Clear signature
-        </button>
+        </Button>x
         <div className="muted" style={{ alignSelf: "center" }}>
           Use your finger on mobile, or mouse/trackpad on desktop.
         </div>

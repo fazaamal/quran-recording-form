@@ -59,6 +59,10 @@ export function ParticipantFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [resultId, setResultId] = useState<string | null>(null);
+  const [submitProgress, setSubmitProgress] = useState<{ step: number; total: number; label: string } | null>(null);
+
+  // total = 1 (presign) + 1 (signature) + N recordings + 1 (save to DB)
+  const SUBMIT_TOTAL = 1 + 1 + stimuli.length + 1;
 
   async function enableMicrophone() {
     setMicError(null);
@@ -90,6 +94,7 @@ export function ParticipantFlow() {
 
     setSubmitting(true);
     setSubmitError(null);
+    setSubmitProgress({ step: 0, total: SUBMIT_TOTAL, label: "Preparing upload…" });
     try {
       const signaturePngBlob = await (await fetch(signaturePngDataUrl)).blob();
 
@@ -100,6 +105,7 @@ export function ParticipantFlow() {
         }),
         signature: { contentType: "image/png" },
       });
+      setSubmitProgress({ step: 1, total: SUBMIT_TOTAL, label: "Uploading signature…" });
 
       await fetch(uploadPlan.signature.putUrl, {
         method: "PUT",
@@ -109,7 +115,13 @@ export function ParticipantFlow() {
         setTestError(uploadPlan.signature.putUrl);
       });
 
-      for (const s of stimuli) {
+      for (let i = 0; i < stimuli.length; i++) {
+        const s = stimuli[i]!;
+        setSubmitProgress({
+          step: 2 + i,
+          total: SUBMIT_TOTAL,
+          label: `Uploading recording ${i + 1} of ${stimuli.length}…`,
+        });
         const rec = recordings[s.id]!;
         const putUrl = uploadPlan.recordings[s.id]?.putUrl;
         if (!putUrl) throw new Error(`Missing upload URL for ${s.id}`);
@@ -119,6 +131,8 @@ export function ParticipantFlow() {
           body: rec.blob,
         });
       }
+
+      setSubmitProgress({ step: SUBMIT_TOTAL - 1, total: SUBMIT_TOTAL, label: "Saving response…" });
 
       const submitRes = await apiSubmitResponse({
         participant: {
@@ -148,9 +162,11 @@ export function ParticipantFlow() {
       });
 
       setResultId(submitRes.responseId);
+      setSubmitProgress(null);
       setStep("done");
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Submit failed");
+      setSubmitProgress(null);
     } finally {
       setSubmitting(false);
     }
@@ -179,7 +195,7 @@ export function ParticipantFlow() {
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Button onClick={() => setStep("environment")}>Start</Button>
-            <a className="pill" href="/pdf/consent_form.pdf" target="_blank" rel="noreferrer">
+            <a className="pill" href="/consent_form.pdf" target="_blank" rel="noreferrer">
               View consent PDF
             </a>
           </div>
@@ -315,7 +331,7 @@ export function ParticipantFlow() {
             Please read the consent form and provide your handwritten signature below.
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a className="pill" href="/pdf/consent_form.pdf" target="_blank" rel="noreferrer">
+            <a className="pill" href="/consent_form.pdf" target="_blank" rel="noreferrer">
               Open consent PDF
             </a>
           </div>
@@ -410,6 +426,55 @@ export function ParticipantFlow() {
           <a className="pill" href="/" onClick={() => window.location.reload()}>
             Submit another response
           </a>
+        </div>
+      )}
+
+      {submitProgress && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+          }}
+        >
+          <div
+            className="card stack"
+            style={{ width: "min(420px, 90vw)", gap: 18, background: "white" }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 17 }}>Uploading…</div>
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 13,
+                  marginBottom: 8,
+                  color: "var(--app-muted)",
+                }}
+              >
+                <span>{submitProgress.label}</span>
+                <span>{submitProgress.step}/{submitProgress.total}</span>
+              </div>
+              <div className="progressBar" style={{ height: 12 }}>
+                <div
+                  className="progressBarFill"
+                  style={{
+                    width: `${(submitProgress.step / submitProgress.total) * 100}%`,
+                    transition: "width 0.3s ease",
+                  }}
+                />
+              </div>
+            </div>
+            <div className="muted" style={{ fontSize: 12 }}>
+              Please don't close or refresh this page.
+            </div>
+          </div>
         </div>
       )}
     </div>
