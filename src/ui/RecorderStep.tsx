@@ -68,6 +68,9 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  // Holds the Blob produced by the last mr.onstop — avoids re-fetching via ObjectURL
+  // which is unreliable on iOS Safari (can return empty/corrupt data under memory pressure).
+  const previewBlobRef = useRef<Blob | null>(null);
   const recordStartMsRef = useRef<number>(0);
   const countdownIntervalRef = useRef<number | null>(null);
   const countdownGenRef = useRef(0);
@@ -97,12 +100,14 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
     // When navigating, show saved recording as preview by default
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     if (currentSaved) {
+      previewBlobRef.current = currentSaved.blob;
       const url = URL.createObjectURL(currentSaved.blob);
       setPreviewUrl(url);
       setPreviewDurationMs(currentSaved.durationMs);
       setPreviewMimeType(currentSaved.mimeType);
       setPhase("review");
     } else {
+      previewBlobRef.current = null;
       setPreviewUrl(null);
       setPreviewDurationMs(0);
       setPreviewMimeType("");
@@ -173,8 +178,16 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
   async function ensurePermission() {
     setError(null);
     try {
-      if (streamRef.current) {
-        return streamRef.current;
+      // On iOS Safari, audio tracks become "ended" when the page is backgrounded
+      // or the screen is locked. Reuse the stream only if all tracks are still live.
+      const existing = streamRef.current;
+      if (existing && existing.getTracks().every((t) => t.readyState === "live")) {
+        return existing;
+      }
+      // Stale or missing stream — release old tracks and get a fresh one.
+      if (existing) {
+        existing.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -251,6 +264,8 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
         clearRecordStopTimeout();
         clearRecordingAnimation();
         const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
+        // Store blob directly — used by saveRecording to avoid ObjectURL round-trip.
+        previewBlobRef.current = blob;
         const url = URL.createObjectURL(blob);
         setPreviewUrl((prev) => {
           if (prev) URL.revokeObjectURL(prev);
@@ -286,9 +301,11 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
     if (mr && mr.state === "recording") mr.stop();
   }
 
-  async function saveRecording() {
-    if (!previewUrl) return;
-    const blob = await (await fetch(previewUrl)).blob();
+  function saveRecording() {
+    // Use the blob stored directly from mr.onstop — never re-fetch via ObjectURL,
+    // which is unreliable on iOS Safari and can return empty data after revocation.
+    const blob = previewBlobRef.current;
+    if (!blob) return;
     onRecording(stimulus.id, {
       stimulus,
       blob,
@@ -304,6 +321,7 @@ export function RecorderStep({ stimuli, recordings, onRecording }: Props) {
     setPreviewUrl(null);
     setPreviewDurationMs(0);
     setPreviewMimeType("");
+    previewBlobRef.current = null;
     setPhase("idle");
   }
 
