@@ -15,11 +15,9 @@ function getCanvasPos(e: PointerEvent, canvas: HTMLCanvasElement) {
 }
 
 function canvasThemeStyles() {
-  const prefersLight =
-    typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: light)")?.matches;
-  return prefersLight
-    ? { fill: "rgba(0,0,0,0.04)", stroke: "rgba(0,0,0,0.88)" }
-    : { fill: "rgba(255,255,255,0.06)", stroke: "rgba(255,255,255,0.92)" };
+  // Always record signatures in dark ink on a transparent background so they
+  // remain visible when stamped onto a white PDF.
+  return { stroke: "rgba(0,0,0,0.9)" };
 }
 
 export function SignaturePad({ value, onChange }: Props) {
@@ -37,10 +35,8 @@ export function SignaturePad({ value, onChange }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const { fill, stroke } = canvasThemeStyles();
+    const { stroke } = canvasThemeStyles();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = fill;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.lineWidth = 6;
@@ -52,10 +48,7 @@ export function SignaturePad({ value, onChange }: Props) {
         const c = canvasRef.current;
         const cctx = c?.getContext("2d");
         if (!c || !cctx) return;
-        const t = canvasThemeStyles();
         cctx.clearRect(0, 0, c.width, c.height);
-        cctx.fillStyle = t.fill;
-        cctx.fillRect(0, 0, c.width, c.height);
         cctx.drawImage(img, 0, 0, c.width, c.height);
       };
       img.src = value;
@@ -167,16 +160,13 @@ export function SignaturePad({ value, onChange }: Props) {
             const canvas = canvasRef.current;
             const ctx = canvas?.getContext("2d");
             if (canvas && ctx) {
-              const { fill } = canvasThemeStyles();
               ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.fillStyle = fill;
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
             onChange(null);
           }}
         >
           Clear signature
-        </Button>x
+        </Button>
         <div className="muted" style={{ alignSelf: "center" }}>
           Use your finger on mobile, or mouse/trackpad on desktop.
         </div>
