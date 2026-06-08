@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useRef } from "react";
+import { analyzeSignatureCanvas } from "@/utils/signatureValidation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   value: string | null;
   onChange: (pngDataUrl: string | null) => void;
+  onValidityChange?: (valid: boolean, message?: string) => void;
 };
 
 function getCanvasPos(e: PointerEvent, canvas: HTMLCanvasElement) {
@@ -20,12 +22,29 @@ function canvasThemeStyles() {
   return { stroke: "rgba(0,0,0,0.9)" };
 }
 
-export function SignaturePad({ value, onChange }: Props) {
+export function SignaturePad({ value, onChange, onValidityChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onValidityChangeRef = useRef(onValidityChange);
+  onValidityChangeRef.current = onValidityChange;
+
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const size = useMemo(() => ({ w: 900, h: 280 }), []);
+
+  function applyValidation(canvas: HTMLCanvasElement) {
+    const result = analyzeSignatureCanvas(canvas);
+    if (result.valid) {
+      setValidationError(null);
+      onChangeRef.current(canvas.toDataURL("image/png"));
+      onValidityChangeRef.current?.(true);
+    } else {
+      setValidationError(result.message ?? null);
+      onChangeRef.current(null);
+      onValidityChangeRef.current?.(false, result.message);
+    }
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,19 +60,25 @@ export function SignaturePad({ value, onChange }: Props) {
     ctx.lineJoin = "round";
     ctx.lineWidth = 6;
     ctx.strokeStyle = stroke;
+  }, [size.h, size.w]);
 
-    if (value) {
-      const img = new Image();
-      img.onload = () => {
-        const c = canvasRef.current;
-        const cctx = c?.getContext("2d");
-        if (!c || !cctx) return;
-        cctx.clearRect(0, 0, c.width, c.height);
-        cctx.drawImage(img, 0, 0, c.width, c.height);
-      };
-      img.src = value;
-    }
-  }, [size.h, size.w, value]);
+  useEffect(() => {
+    if (!value) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const c = canvasRef.current;
+      const cctx = c?.getContext("2d");
+      if (!c || !cctx) return;
+      cctx.clearRect(0, 0, c.width, c.height);
+      cctx.drawImage(img, 0, 0, c.width, c.height);
+      applyValidation(c);
+    };
+    img.src = value;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -114,8 +139,7 @@ export function SignaturePad({ value, onChange }: Props) {
       }
       lastRef.current = null;
       if (strokeStartedRef.current) {
-        const png = canvasEl.toDataURL("image/png");
-        onChangeRef.current(png);
+        applyValidation(canvasEl);
       }
       strokeStartedRef.current = false;
     }
@@ -135,6 +159,7 @@ export function SignaturePad({ value, onChange }: Props) {
 
   return (
     <div className="stack">
+      <div className="muted">Please sign with your full name.</div>
       <div
         style={{
           border: "1px solid var(--border)",
@@ -153,6 +178,9 @@ export function SignaturePad({ value, onChange }: Props) {
           }}
         />
       </div>
+      {validationError && (
+        <div style={{ color: "var(--danger)" }}>{validationError}</div>
+      )}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <Button
           className="danger"
@@ -162,7 +190,9 @@ export function SignaturePad({ value, onChange }: Props) {
             if (canvas && ctx) {
               ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
+            setValidationError(null);
             onChange(null);
+            onValidityChange?.(false);
           }}
         >
           Clear signature

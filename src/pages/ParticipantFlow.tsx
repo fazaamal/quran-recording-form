@@ -46,6 +46,7 @@ export function ParticipantFlow() {
     hadTajweedClasses: null,
   });
   const [signaturePngDataUrl, setSignaturePngDataUrl] = useState<string | null>(null);
+  const [signatureValid, setSignatureValid] = useState(false);
   const [micReady, setMicReady] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
@@ -79,8 +80,8 @@ export function ParticipantFlow() {
   }
 
   async function submitAll() {
-    if (!signaturePngDataUrl) {
-      setSubmitError("Please add your signature before submitting.");
+    if (!signaturePngDataUrl || !signatureValid) {
+      setSubmitError("Please add a full handwritten signature before submitting.");
       return;
     }
     if (!allDone) {
@@ -335,11 +336,15 @@ export function ParticipantFlow() {
               Open consent PDF
             </a>
           </div>
-          <SignaturePad value={signaturePngDataUrl} onChange={setSignaturePngDataUrl} />
+          <SignaturePad
+            value={signaturePngDataUrl}
+            onChange={setSignaturePngDataUrl}
+            onValidityChange={(valid) => setSignatureValid(valid)}
+          />
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Button variant="outline" onClick={() => setStep("info")}>Back</Button>
             <Button
-              disabled={!signaturePngDataUrl}
+              disabled={!signaturePngDataUrl || !signatureValid}
               onClick={() => {
                 setMicReady(false);
                 setMicError(null);
