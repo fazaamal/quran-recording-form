@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Stimulus, stimuli } from "../stimuli";
 import { SignaturePad } from "../ui/SignaturePad";
 import { RecorderStep } from "../ui/RecorderStep";
@@ -49,6 +49,8 @@ export function ParticipantFlow() {
   const [signatureValid, setSignatureValid] = useState(false);
   const [micReady, setMicReady] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
   const [recordings, setRecordings] = useState<Record<string, RecordingBlob | undefined>>({});
@@ -65,14 +67,31 @@ export function ParticipantFlow() {
   // total = 1 (presign) + 1 (signature) + N recordings + 1 (save to DB)
   const SUBMIT_TOTAL = 1 + 1 + stimuli.length + 1;
 
+  useEffect(() => {
+    if (step === "recordings" || step === "mic") return;
+    const stream = micStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      micStreamRef.current = null;
+      setMicStream(null);
+    }
+    setMicReady(false);
+  }, [step]);
+
   async function enableMicrophone() {
     setMicError(null);
     try {
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      for (const t of stream.getTracks()) t.stop();
+      micStreamRef.current = stream;
+      setMicStream(stream);
       setMicReady(true);
     } catch (e) {
       setMicReady(false);
+      micStreamRef.current = null;
+      setMicStream(null);
       setMicError(
         e instanceof Error ? e.message : "Could not access the microphone. Please check permissions."
       );
@@ -404,8 +423,12 @@ export function ParticipantFlow() {
           <RecorderStep
             stimuli={stimuli}
             recordings={recordings}
+            sharedStream={micStream}
             onRecording={(stimulusId, rec) =>
               setRecordings((p) => ({ ...p, [stimulusId]: rec }))
+            }
+            onClearRecording={(stimulusId) =>
+              setRecordings((p) => ({ ...p, [stimulusId]: undefined }))
             }
           />
 
