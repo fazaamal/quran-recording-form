@@ -2,6 +2,10 @@
   command = "npm run build"
   publish = "dist"
 
+# Vite 8 needs Node 20.19+; on Node 20.17 npm's installer also crashes ("reading 'edgesOut'").
+[build.environment]
+  NODE_VERSION = "22"
+
 # Run `npm run dev` (Netlify CLI) so /api/* is routed to functions. Open the URL
 # Netlify prints (port 8888), not raw Vite.
 # Use an empty publish dir in dev so dist/_redirects SPA fallback does not run;
