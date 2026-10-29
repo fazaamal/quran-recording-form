@@ -47,17 +47,30 @@ const db = new pg.Client({
   ssl: /localhost|127\.0\.0\.1/.test(process.env.POSTGRES_URL ?? "") ? false : { rejectUnauthorized: false },
 })
 
+// ffmpeg can hang on a malformed file; a timeout turns that into a skip instead of a stuck run.
+const FFMPEG_TIMEOUT_MS = 60_000
+
+// Decodes the whole file and reads the last timestamp. Browser webm uploads carry no duration in
+// their header, so ffprobe's format=duration is N/A for them; decoding also proves the audio plays.
 async function probeSeconds(file) {
-  const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file])
-  const s = Number.parseFloat(stdout.trim())
-  if (!Number.isFinite(s)) throw new Error("no duration")
+  const { stderr } = await run("ffmpeg", ["-nostdin", "-v", "error", "-stats", "-i", file, "-f", "null", "-"], {
+    timeout: FFMPEG_TIMEOUT_MS,
+  })
+  const times = [...stderr.matchAll(/time=(\d+):(\d+):([\d.]+)/g)]
+  const last = times.at(-1)
+  const s = last ? Number(last[1]) * 3600 + Number(last[2]) * 60 + Number(last[3]) : NaN
+  if (!Number.isFinite(s) || s <= 0) throw new Error("no decodable audio")
   return s
 }
 
 const TRIM = "silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.15"
 async function encode(input, output, trim) {
   const filters = [...(trim ? [TRIM, "areverse", TRIM, "areverse"] : []), "loudnorm=I=-20:TP=-2:LRA=11"]
-  await run("ffmpeg", ["-v", "error", "-y", "-i", input, "-af", filters.join(","), "-ac", "1", "-ar", "44100", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", output])
+  await run(
+    "ffmpeg",
+    ["-nostdin", "-v", "error", "-y", "-i", input, "-af", filters.join(","), "-ac", "1", "-ar", "44100", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", output],
+    { timeout: FFMPEG_TIMEOUT_MS }
+  )
 }
 
 async function processOne(rec, dir) {
@@ -75,9 +88,9 @@ async function processOne(rec, dir) {
   await writeFile(input, bytes)
   try {
     await probeSeconds(input)
-    await encode(input, output, true)
-    // If trimming left almost nothing, keep the untrimmed clip and let raters judge it.
-    if ((await probeSeconds(output)) < 0.3) await encode(input, output, false)
+    // If trimming fails or leaves almost nothing, keep the untrimmed clip and let raters judge it.
+    const trimmed = await encode(input, output, true).then(() => probeSeconds(output), () => 0)
+    if (trimmed < 0.3) await encode(input, output, false)
   } catch (e) {
     return { status: "corrupt", reason: String(e.stderr || e.message).trim().split("\n")[0] }
   }
