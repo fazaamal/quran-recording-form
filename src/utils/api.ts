@@ -128,6 +128,96 @@ export async function apiAdminResponse(
   return json<{ response: any; recordings: any[] }>(res)
 }
 
+export type RateItem = {
+  position: number
+  textAr: string
+  letter: "dad" | "ayn"
+  harakah: "fatha" | "kasra" | "damma" | "sukoon"
+  kind: "letter" | "word"
+  audioUrl: string
+}
+
+export type RateState = {
+  total: number
+  done: number
+  canUndo: boolean
+  current: RateItem | null
+  preloadUrl: string | null
+}
+
+export type RateSession = RateState & {
+  rater: { name: string }
+  problems: Record<string, string>
+}
+
+export async function apiRateSession(token: string) {
+  const res = await fetch(
+    `${NETLIFY_FUNCTIONS_BASE_URL}/rate-session?t=${encodeURIComponent(token)}`
+  )
+  return json<RateSession>(res)
+}
+
+export async function apiRateSubmit(body: {
+  t: string
+  position: number
+  score?: number
+  problem?: string
+  note?: string
+  plays: number
+  ms: number
+}) {
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/rate-submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return json<RateState>(res)
+}
+
+export async function apiRateUndo(token: string) {
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/rate-undo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ t: token }),
+  })
+  return json<RateState>(res)
+}
+
+export type RaterRow = {
+  id: string
+  name: string
+  token: string
+  round: number
+  created_at: string
+  total: number
+  done: number
+  problems: number
+  last_rated_at: string | null
+}
+
+export async function apiAdminRaters(headers: Record<string, string>) {
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/admin-raters`, { headers })
+  return json<{ raters: RaterRow[]; clipsByRound: { round: number; n: number }[] }>(res)
+}
+
+export async function apiAdminCreateRater(
+  headers: Record<string, string>,
+  body: { name: string; round?: number }
+) {
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/admin-raters`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return json<{ id: string; name: string; token: string; total: number }>(res)
+}
+
+export async function apiAdminExportRatingsCsv(headers: Record<string, string>) {
+  const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/admin-raters?export=csv`, { headers })
+  if (!res.ok) throw new Error(`Export failed (${res.status})`)
+  return await res.blob()
+}
+
 export async function apiAdminExportCsv(headers: Record<string, string>) {
   const res = await fetch(`${NETLIFY_FUNCTIONS_BASE_URL}/admin-export-csv`, {
     headers,

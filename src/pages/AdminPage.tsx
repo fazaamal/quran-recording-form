@@ -4,6 +4,7 @@ import { BasicAuth, basicAuthAuthorizationHeader, loadBasicAuth, saveBasicAuth }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RatersPanel } from "./RatersPanel";
 
 type ResponseRow = {
   id: string;
@@ -171,6 +172,8 @@ export function AdminPage() {
         </div>
         {error && <div style={{ color: "var(--danger)" }}>{error}</div>}
       </div>
+
+      {headers && <RatersPanel headers={headers} />}
 
       {selected && (
         <div className="card stack">
